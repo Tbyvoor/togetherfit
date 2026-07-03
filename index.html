@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>TogetherFit</title>
+<meta name="theme-color" content="#1f5436">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TogetherFit">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* kleur — dennengroen + salie-neutralen */
+    --bg: #f3f5ef;
+    --surface: #ffffff;
+    --surface-2: #edf1e9;
+    --border: #e2e7dd;
+    --text1: #1b2a20;
+    --text2: #49584d;
+    --text3: #7d8a7e;
+    --brand: #2c6e49;
+    --brand-deep: #1f5436;
+    --brand-dark: #1f5436;   /* accent-inkt op licht */
+    --brand-light: #e3efe4;
+    --on-brand: #f4faf4;
+    --good: #2e8f47;
+    --good-bg: #e2f3e4;
+    --warning: #a1700c;
+    --warning-bg: #f9efd8;
+    --critical: #c23b3b;
+    --critical-bg: #f9e6e4;
+    --cat-1: #2a78d6; /* eiwit */
+    --cat-2: #1baf7a; /* koolhydraten */
+    --cat-3: #eda100; /* vet */
+    --seq-line: #2a78d6;
+    --shadow: 0 1px 2px rgba(27,42,32,.05), 0 10px 28px -20px rgba(27,42,32,.35);
+    --radius: 18px;
+    --font-display: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg: #121812;
+      --surface: #1b231b;
+      --surface-2: #232d23;
+      --border: #2c372c;
+      --text1: #eef3ec;
+      --text2: #b6c2b6;
+      --text3: #839083;
+      --brand: #35835a;
+      --brand-deep: #234e37;
+      --brand-dark: #9fd8b6;  /* accent-inkt op donker */
+      --brand-light: #21301f;
+      --on-brand: #f4faf4;
+      --good: #57c274;
+      --good-bg: #1e3322;
+      --warning: #dfa93c;
+      --warning-bg: #362c14;
+      --critical: #e57272;
+      --critical-bg: #3a2020;
+      --seq-line: #5598e7;
+      --shadow: 0 1px 2px rgba(0,0,0,.25), 0 10px 28px -20px rgba(0,0,0,.6);
+    }
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; font-family:var(--font-body);
+    background:var(--bg); color:var(--text1);
+    display:flex; justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{ font-family:inherit; }
+  :focus-visible{ outline:2px solid var(--brand); outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ transition:none !important; animation:none !important; }
+  }
+
+  #app{
+    width:100%; max-width:480px; min-height:100vh; background:var(--bg);
+    display:flex; flex-direction:column; position:relative;
+  }
+
+  /* ── Hero-paneel: header + profielkiezer als één groen blok ── */
+  header{
+    background:var(--brand-deep); color:var(--on-brand);
+    padding:22px 20px 10px 20px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  }
+  header h1{
+    font-family:var(--font-display); font-size:25px; font-weight:700;
+    letter-spacing:-.4px; margin:0; line-height:1.15; text-wrap:balance;
+  }
+  header .sub{
+    font-size:13px; color:var(--on-brand); opacity:.72; margin-top:3px;
+    letter-spacing:.2px;
+  }
+  header .sub::first-letter{ text-transform:uppercase; }
+  .gear-btn{
+    background:rgba(255,255,255,.13); border:none; color:var(--on-brand);
+    width:42px; height:42px; border-radius:14px; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s;
+  }
+  .gear-btn:hover{ background:rgba(255,255,255,.22); }
+  .gear-btn svg{ width:20px; height:20px; }
+
+  .profile-bar{
+    display:flex; gap:8px; padding:10px 20px 18px 20px; overflow-x:auto;
+    background:var(--brand-deep); border-radius:0 0 26px 26px;
+    scrollbar-width:none;
+  }
+  .profile-bar::-webkit-scrollbar{ display:none; }
+  .profile-bar:empty{ display:none; }
+  .profile-pill{
+    flex-shrink:0; padding:8px 16px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1);
+    font-weight:600; font-size:13.5px; color:var(--on-brand);
+    cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;
+  }
+  .profile-pill.active{
+    background:var(--on-brand); border-color:var(--on-brand); color:var(--brand-deep);
+    font-weight:700;
+  }
+  .profile-pill.add{ background:none; border:1.5px dashed rgba(255,255,255,.35); }
+
+  main{ flex:1; padding:18px 16px 96px 16px; overflow-y:auto; }
+
+  /* ── Tabbalk ── */
+  nav.tabbar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:480px; background:var(--surface);
+    border-top:1px solid var(--border);
+    display:flex; gap:4px; z-index:30; padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; padding:8px 4px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--text3); border-radius:14px; transition:background .15s, color .15s;
+  }
+  nav.tabbar button svg{ width:22px; height:22px; }
+  nav.tabbar button .lb{ font-size:11px; font-weight:600; letter-spacing:.2px; }
+  nav.tabbar button.active{ color:var(--brand-dark); background:var(--brand-light); }
+  nav.tabbar button.active .lb{ font-weight:700; }
+
+  /* ── Sectiekoppen & kaarten ── */
+  h2.section-title{
+    font-size:12.5px; text-transform:uppercase; letter-spacing:.9px;
+    color:var(--text3); margin:24px 2px 10px 2px; font-weight:700;
+  }
+  h2.section-title:first-child{ margin-top:0; }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px; margin-bottom:14px;
+    box-shadow:var(--shadow);
+  }
+  .card h3{ margin:0 0 12px 0; font-size:16px; font-family:var(--font-display); font-weight:600; letter-spacing:-.2px; }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-tile{ background:var(--surface-2); border-radius:14px; padding:13px 15px; }
+  .stat-tile .v{
+    font-family:var(--font-display); font-size:23px; font-weight:700;
+    color:var(--text1); font-variant-numeric:tabular-nums; letter-spacing:-.3px;
+  }
+  .stat-tile .l{ font-size:12px; color:var(--text2); margin-top:3px; }
+
+  /* ── Knoppen & formulieren ── */
+  .btn{
+    background:var(--brand); color:var(--on-brand); border:none; border-radius:13px;
+    padding:13px 18px; font-size:15px; font-weight:700; cursor:pointer;
+    transition:filter .12s, transform .06s;
+  }
+  .btn:hover{ filter:brightness(1.06); }
+  .btn:active{ filter:brightness(.92); transform:translateY(1px); }
+  .btn.secondary{ background:var(--brand-light); color:var(--brand-dark); }
+  .btn.ghost{ background:none; color:var(--brand-dark); padding:8px 10px; }
+  .btn.danger{ background:var(--critical-bg); color:var(--critical); }
+  .btn.block{ width:100%; }
+  .btn:disabled{ opacity:.45; cursor:default; }
+
+  input, select{
+    font-family:inherit; font-size:16px; padding:11px 13px; border-radius:11px;
+    border:1.5px solid var(--border); background:var(--surface); color:var(--text1);
+    width:100%; transition:border-color .15s;
+  }
+  input:focus, select:focus{ border-color:var(--brand); outline:none; }
+  label{ font-size:13px; color:var(--text2); font-weight:600; display:block; margin:12px 0 5px 0; }
+  label:first-child{ margin-top:0; }
+
+  /* ── Voortgangsbalken & legenda ── */
+  .progress-outer{ height:12px; background:var(--surface-2); border-radius:999px; overflow:hidden; }
+  .progress-inner{ height:100%; border-radius:999px; transition:width .3s; }
+  .legend{ display:flex; gap:14px; margin-top:9px; flex-wrap:wrap; }
+  .legend .li{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text2); }
+  .legend .dot{ width:9px; height:9px; border-radius:50%; }
+
+  /* ── Voeding ── */
+  .food-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }
+  .food-item{
+    background:var(--surface); border:1px solid var(--border); border-radius:13px;
+    padding:11px 13px; text-align:left; cursor:pointer;
+    transition:border-color .12s, background .12s;
+  }
+  .food-item:hover{ border-color:var(--brand); }
+  .food-item:active{ background:var(--brand-light); }
+  .food-item .fn{ font-size:13.5px; font-weight:600; color:var(--text1); display:block; line-height:1.3; }
+  .food-item .fk{ font-size:12px; color:var(--text3); font-variant-numeric:tabular-nums; }
+
+  .log-row{ display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); }
+  .log-row:last-child{ border-bottom:none; padding-bottom:2px; }
+  .log-row .fn{ font-weight:600; font-size:14.5px; }
+  .log-row .fk{ font-size:12.5px; color:var(--text3); font-variant-numeric:tabular-nums; }
+  .del-btn{ background:none; border:none; color:var(--text3); font-size:17px; cursor:pointer; padding:6px 8px; border-radius:8px; }
+  .del-btn:hover{ color:var(--critical); background:var(--critical-bg); }
+
+  details.tips{
+    background:var(--brand-light); border-radius:var(--radius);
+    padding:15px 18px; margin-bottom:14px;
+  }
+  details.tips summary{ font-weight:700; color:var(--brand-dark); cursor:pointer; font-size:14.5px; }
+  details.tips ul{ margin:10px 0 0 0; padding-left:20px; }
+  details.tips li{ margin-bottom:8px; font-size:14px; line-height:1.5; color:var(--text1); }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:700;
+    padding:5px 12px; border-radius:999px; font-variant-numeric:tabular-nums;
+  }
+  .badge.good{ background:var(--good-bg); color:var(--good); }
+  .badge.warning{ background:var(--warning-bg); color:var(--warning); }
+  .badge.critical{ background:var(--critical-bg); color:var(--critical); }
+
+  /* ── Calorie-ring ── */
+  .ring-hero{ display:flex; align-items:center; gap:20px; justify-content:center; padding:8px 0 6px 0; }
+  .ring-wrap{ position:relative; width:150px; height:150px; flex-shrink:0; }
+  .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .ring-num{
+    font-family:var(--font-display); font-size:30px; font-weight:700;
+    font-variant-numeric:tabular-nums; letter-spacing:-.5px; line-height:1;
+  }
+  .ring-lbl{ font-size:11.5px; color:var(--text2); margin-top:4px; }
+  .ring-stats{ display:flex; flex-direction:column; gap:16px; }
+  .ring-stat .rv{
+    display:block; font-family:var(--font-display); font-size:20px; font-weight:700;
+    font-variant-numeric:tabular-nums; letter-spacing:-.3px;
+  }
+  .ring-stat .rl{ font-size:11.5px; color:var(--text2); margin-top:1px; }
+
+  /* ── Workouts: set-tabel ── */
+  .exercise-card{
+    border:1px solid var(--border); border-radius:var(--radius); padding:15px 16px;
+    margin-bottom:10px; background:var(--surface); box-shadow:var(--shadow);
+  }
+  .exercise-card h4{ margin:0; font-size:15.5px; font-family:var(--font-display); font-weight:600; letter-spacing:-.2px; }
+  .exercise-card .meta{ font-size:12.5px; color:var(--text2); margin:3px 0 8px 0; }
+  .ex-top{ display:flex; align-items:center; justify-content:space-between; }
+  .ex-top .meta{ margin-top:3px; }
+  details.ex-info{ margin:6px 0 10px 0; }
+  details.ex-info summary{ font-size:12.5px; font-weight:700; color:var(--brand-dark); cursor:pointer; }
+  details.ex-info p{ font-size:13.5px; line-height:1.5; color:var(--text2); margin:7px 0 0 0; }
+
+  .set-head, .set-row{ display:grid; align-items:center; gap:6px; }
+  .set-head.w4, .set-row.w4{ grid-template-columns:26px 1fr 58px 58px 34px; }
+  .set-head.w3, .set-row.w3{ grid-template-columns:26px 1fr 64px 34px; }
+  .set-head{
+    font-size:10px; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--text3); font-weight:700; padding:2px 0 7px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .set-row{ padding:7px 0; border-bottom:1px solid var(--border); }
+  .set-row:last-child{ border-bottom:none; padding-bottom:2px; }
+  .set-row .set-num{ font-weight:700; color:var(--text3); font-variant-numeric:tabular-nums; text-align:center; font-size:13px; }
+  .set-row .set-prev{ font-size:11.5px; color:var(--text3); font-variant-numeric:tabular-nums; }
+  .set-input{
+    width:100%; padding:8px 4px; font-size:14.5px; text-align:center;
+    font-variant-numeric:tabular-nums; background:var(--surface-2);
+    border:1.5px solid transparent; border-radius:9px;
+  }
+  .set-input:focus{ border-color:var(--brand); background:var(--surface); }
+  .check{
+    width:28px; height:28px; border-radius:9px; border:2px solid var(--border);
+    background:var(--surface); cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transition:background .12s, border-color .12s;
+  }
+  .check.on{ background:var(--brand); border-color:var(--brand); color:var(--on-brand); }
+
+  .rest-banner{
+    position:fixed; bottom:84px; left:50%; transform:translateX(-50%);
+    width:calc(100% - 48px); max-width:432px;
+    background:var(--brand-deep); color:var(--on-brand);
+    padding:12px 18px; display:flex; align-items:center; justify-content:space-between;
+    font-weight:700; font-size:14.5px; font-variant-numeric:tabular-nums;
+    z-index:25; border-radius:16px; box-shadow:0 12px 32px -12px rgba(0,0,0,.45);
+  }
+  .rest-banner button{
+    background:rgba(255,255,255,.16); border:none; color:var(--on-brand);
+    padding:7px 14px; border-radius:9px; font-weight:700; font-size:12.5px; cursor:pointer;
+  }
+
+  /* ── Wissels, modals, tabellen ── */
+  .tab-switch{ display:flex; gap:6px; margin-bottom:14px; background:var(--surface-2); padding:4px; border-radius:13px; }
+  .tab-switch button{
+    flex:1; padding:8px 6px; border-radius:10px; border:none; background:none;
+    font-weight:600; font-size:13px; color:var(--text2); cursor:pointer;
+    transition:background .12s, color .12s;
+  }
+  .tab-switch button.active{ background:var(--surface); color:var(--brand-dark); font-weight:700; box-shadow:0 1px 3px rgba(27,42,32,.12); }
+
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(15,22,16,.55); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal-bg.onboard{ align-items:center; }
+  .modal{
+    background:var(--surface); width:100%; max-width:480px;
+    border-radius:24px 24px 0 0; padding:22px 20px; max-height:88vh; overflow-y:auto;
+  }
+  .modal-bg.onboard .modal{ border-radius:24px; max-width:420px; margin:16px; }
+  .modal h3{ margin-top:0; font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:-.3px; }
+  .modal-close{
+    background:var(--surface-2); border:none; color:var(--text2); width:32px; height:32px;
+    border-radius:10px; font-size:14px; cursor:pointer; flex-shrink:0; margin-left:10px;
+  }
+  .modal-close:hover{ background:var(--border); color:var(--text1); }
+  .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+
+  .chart-wrap{ overflow-x:auto; }
+  svg text{ font-family:var(--font-body); }
+  .empty{ text-align:center; color:var(--text3); font-size:13.5px; padding:26px 10px; }
+
+  table.simple{ width:100%; border-collapse:collapse; font-size:13.5px; font-variant-numeric:tabular-nums; }
+  table.simple th{ text-align:left; color:var(--text3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:6px 4px; border-bottom:1px solid var(--border); }
+  table.simple td{ padding:8px 4px; border-bottom:1px solid var(--border); }
+
+  .date-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .date-nav button{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    width:40px; height:40px; font-size:16px; cursor:pointer; color:var(--text2);
+    transition:border-color .12s;
+  }
+  .date-nav button:hover:not(:disabled){ border-color:var(--brand); color:var(--brand-dark); }
+  .date-nav button:disabled{ opacity:.35; cursor:default; }
+  .date-nav .dlabel{ font-family:var(--font-display); font-weight:600; font-size:15.5px; letter-spacing:-.2px; }
+
+  /* ── Kalender: voeding & trainingen per dag ── */
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-head .cal-maand{ font-family:var(--font-display); font-weight:600; font-size:15.5px; letter-spacing:-.2px; }
+  .cal-head .cal-maand::first-letter{ text-transform:uppercase; }
+  .cal-head button{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    width:38px; height:38px; font-size:15px; cursor:pointer; color:var(--text2);
+    transition:border-color .12s;
+  }
+  .cal-head button:hover:not(:disabled){ border-color:var(--brand); color:var(--brand-dark); }
+  .cal-head button:disabled{ opacity:.35; cursor:default; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .cal-wd{ text-align:center; font-size:10px; color:var(--text3); font-weight:700; text-transform:uppercase; letter-spacing:.4px; padding-bottom:3px; }
+  .cal-day{
+    position:relative; aspect-ratio:1; border:none; background:var(--surface-2);
+    border-radius:11px; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; color:var(--text2); padding:0;
+    transition:box-shadow .12s;
+  }
+  .cal-day .cd-num{ font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1; }
+  .cal-day.f-good{ background:var(--good-bg); color:var(--good); }
+  .cal-day.f-warn{ background:var(--warning-bg); color:var(--warning); }
+  .cal-day.f-over{ background:var(--critical-bg); color:var(--critical); }
+  .cal-day.today{ box-shadow:inset 0 0 0 1.5px var(--text3); }
+  .cal-day.sel{ box-shadow:inset 0 0 0 2px var(--brand); }
+  .cal-day.future{ opacity:.35; cursor:default; background:transparent; border:1px dashed var(--border); }
+  .cd-dot{ width:5px; height:5px; border-radius:50%; background:var(--brand); flex-shrink:0; }
+  @media (prefers-color-scheme: dark){ .cd-dot{ background:var(--brand-dark); } }
+  .cal-legend{ display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
+  .cal-legend .li{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); }
+  .cal-legend .sw{ width:13px; height:13px; border-radius:4px; flex-shrink:0; }
+
+  /* ── Oefeningenbibliotheek ── */
+  .lib-chips{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none; }
+  .lib-chips::-webkit-scrollbar{ display:none; }
+  .lib-chip{
+    flex-shrink:0; padding:8px 14px; border-radius:999px; border:1px solid var(--border);
+    background:var(--surface); font-size:12.5px; font-weight:600; color:var(--text2);
+    cursor:pointer; white-space:nowrap; transition:background .12s, color .12s, border-color .12s;
+  }
+  .lib-chip.active{ background:var(--brand); border-color:var(--brand); color:var(--on-brand); font-weight:700; }
+  .lib-list{
+    max-height:340px; overflow-y:auto; border:1px solid var(--border);
+    border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow);
+  }
+  .lib-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 15px; border-bottom:1px solid var(--border);
+  }
+  .lib-row:last-child{ border-bottom:none; }
+  .lib-row.selected{ background:var(--brand-light); }
+  .lib-row .ln{ font-size:14px; font-weight:600; line-height:1.3; }
+  .lib-row .lg{ font-size:12px; color:var(--text3); margin-top:1px; }
+  .lib-list{ scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+
+  /* ── Micro-interacties & animaties ── */
+  body{ -webkit-tap-highlight-color:transparent; }
+  button, select{ touch-action:manipulation; }
+  ::selection{ background:var(--brand-light); }
+  nav.tabbar button, .profile-pill, .lib-chip, .tab-switch button{ user-select:none; }
+  @keyframes viewIn{ from{ opacity:0; transform:translateY(7px); } to{ opacity:1; transform:none; } }
+  #view.anim{ animation:viewIn .22s ease both; }
+  @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes modalIn{ from{ opacity:0; transform:translateY(26px); } to{ opacity:1; transform:none; } }
+  .modal-bg{ animation:fadeIn .15s ease both; }
+  .modal{ animation:modalIn .26s cubic-bezier(.2,.9,.3,1) both; }
+
+  /* ── Toast-melding ── */
+  .toast{
+    position:fixed; bottom:94px; left:50%; transform:translateX(-50%); z-index:60;
+    background:var(--text1); color:var(--bg); padding:11px 20px; border-radius:999px;
+    font-size:13.5px; font-weight:600; box-shadow:0 10px 28px rgba(0,0,0,.28);
+    white-space:nowrap; max-width:88%; overflow:hidden; text-overflow:ellipsis;
+    animation:toastIn .22s ease both;
+  }
+  .toast.hide{ animation:toastOut .25s ease both; }
+  @keyframes toastIn{ from{ opacity:0; transform:translate(-50%,10px); } to{ opacity:1; transform:translate(-50%,0); } }
+  @keyframes toastOut{ from{ opacity:1; } to{ opacity:0; transform:translate(-50%,6px); } }
+
+  /* ── Cardio-activiteitentegels ── */
+  .cardio-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:2px; }
+  .cardio-tile{
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:12px 4px 10px 4px; border-radius:14px; border:1.5px solid var(--border);
+    background:var(--surface); cursor:pointer; user-select:none;
+    transition:border-color .12s, background .12s, transform .06s;
+  }
+  .cardio-tile:active{ transform:scale(.96); }
+  .cardio-tile{ color:var(--text2); }
+  .cardio-tile .ci-svg{ width:26px; height:26px; }
+  .cardio-tile .cn{ font-size:10.5px; font-weight:600; text-align:center; line-height:1.2; }
+  .cardio-tile.active{ border-color:var(--brand); background:var(--brand-light); color:var(--brand-dark); }
+  .cardio-tile.active .cn{ font-weight:700; }
+  .ci-inline{ width:16px; height:16px; vertical-align:-3px; margin-right:2px; }
+
+  /* ── Rusttimer: voortgang + acties ── */
+  .rest-banner{ overflow:hidden; }
+  .rest-banner .rest-progress{
+    position:absolute; left:0; top:0; bottom:0; width:100%;
+    background:rgba(255,255,255,.13); transition:width 1s linear; z-index:0;
+  }
+  .rest-banner > *{ position:relative; z-index:1; }
+  .rest-actions{ display:flex; gap:8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <h1 id="greeting">TogetherFit</h1>
+      <div class="sub" id="headerSub">&nbsp;</div>
+    </div>
+    <button class="gear-btn" onclick="openProfileModal()" aria-label="Profiel en instellingen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+        <line x1="6" y1="4" x2="6" y2="9"/><circle cx="6" cy="12" r="2.3"/><line x1="6" y1="15" x2="6" y2="20"/>
+        <line x1="12" y1="4" x2="12" y2="6"/><circle cx="12" cy="9" r="2.3"/><line x1="12" y1="12" x2="12" y2="20"/>
+        <line x1="18" y1="4" x2="18" y2="12"/><circle cx="18" cy="15" r="2.3"/><line x1="18" y1="18" x2="18" y2="20"/>
+      </svg>
+    </button>
+  </header>
+  <div id="profileBar" class="profile-bar"></div>
+  <main id="view"></main>
+  <div id="restBanner" class="rest-banner" style="display:none;">
+    <div class="rest-progress"></div>
+    <span class="rt-txt">Rust: 60s</span>
+    <div class="rest-actions">
+      <button onclick="plus30Rest()">+30s</button>
+      <button onclick="stopRest()">Stoppen</button>
+    </div>
+  </div>
+  <nav class="tabbar">
+    <button data-tab="dashboard" onclick="setTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.2 12 4l9 7.2"/><path d="M5.5 9.8V20h13V9.8"/><path d="M10 20v-5h4v5"/>
+      </svg>
+      <span class="lb">Start</span>
+    </button>
+    <button data-tab="voeding" onclick="setTab('voeding')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8.2C10.8 5.6 7 5.2 5.6 8.8c-1.5 3.7 1.2 8.3 3.4 9.7.8.5 1.5.5 2.4 0h1.2c.9.5 1.6.5 2.4 0 2.2-1.4 4.9-6 3.4-9.7C17 5.2 13.2 5.6 12 8.2Z"/>
+        <path d="M12 8.2c0-2 1-3.2 2.6-3.7"/>
+      </svg>
+      <span class="lb">Voeding</span>
+    </button>
+    <button data-tab="voortgang" onclick="setTab('voortgang')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 20h16"/><path d="M5 15.5l4.2-4.2 3 3L18.5 8"/><path d="M14.8 8h3.7v3.7"/>
+      </svg>
+      <span class="lb">Voortgang</span>
+    </button>
+    <button data-tab="workouts" onclick="setTab('workouts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7.5 8.5v7"/><path d="M4.5 10v4"/><path d="M16.5 8.5v7"/><path d="M19.5 10v4"/><path d="M7.5 12h9"/>
+      </svg>
+      <span class="lb">Workouts</span>
+    </button>
+    <button data-tab="cardio" onclick="setTab('cardio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <span class="lb">Cardio</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DATA & OPSLAG (localStorage)
+══════════════════════════════════════════════════════════════ */
+const STORE_KEY = 'fitpad_state_v1';
+
+// Elk gezinslid heeft een eigen profiel/voeding/workouts; alleen de
+// gewichtsgrafiek toont iedereen tegelijk zodat voortgang vergelijkbaar is.
+function defaultState(){
+  return {
+    users: {},          // { [id]: { naam, profile:{leeftijd,lengte,activiteit,streefgewicht,tempo,programma}, weights:[], foodLog:{}, workout:{volgende,historie} } }
+    activeUserId: null
+  };
+}
+
+let state = load();
+// migratie: zorg dat elk profiel een activityLog (cardio-log) heeft
+Object.values(state.users || {}).forEach(u=>{ if(!u.activityLog) u.activityLog = {}; });
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const s = JSON.parse(raw);
+    if(s.profile !== undefined && !s.users){
+      // migratie van de oude single-profiel structuur
+      const migrated = defaultState();
+      if(s.profile){
+        const id = 'user_' + Date.now();
+        const profile = Object.assign({programma:'fullbody'}, s.profile);
+        migrated.users[id] = {
+          naam: profile.naam,
+          profile,
+          weights: s.weights || [],
+          foodLog: s.foodLog || {},
+          workout: s.workout || { volgende:'A', historie:[] }
+        };
+        migrated.activeUserId = id;
+      }
+      return migrated;
+    }
+    return Object.assign(defaultState(), s);
+  }catch(e){ return defaultState(); }
+}
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function activeUser(){ return state.activeUserId ? state.users[state.activeUserId] : null; }
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtDate(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}-${m}-${y}`;
+}
+function fmtDateShort(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('nl-NL', {day:'numeric', month:'short'});
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BEREKENINGEN — Mifflin-St Jeor (BMR), TDEE, macro-doelen
+   Bronnen: Mifflin-St Jeor vergelijking (meest accurate BMR-formule
+   volgens Academy of Nutrition and Dietetics), ACSM/NHS richtlijnen
+   voor veilig afvallen (max. ~1 kg/week), ISSN eiwitrichtlijn
+   (1,6-2,2 g/kg) voor spierbehoud tijdens een dieet.
+
+   Het tempo wordt niet meer los ingesteld, maar volgt automatisch uit
+   het doel: streefgewicht + gewenste termijn (in maanden). Daaruit
+   berekenen we het dagelijkse calorietekort dat nodig is, met een
+   veiligheidsmaximum van ~1 kg/week (anders wordt het tempo afgeremd).
+══════════════════════════════════════════════════════════════ */
+const ACTIVITEIT_FACTOR = {
+  zittend:      { label:'Zittend (weinig of geen beweging)', factor:1.2 },
+  licht:        { label:'Licht actief (1-3x/week sporten)',   factor:1.375 },
+  matig:        { label:'Matig actief (3-5x/week sporten)',   factor:1.55 },
+  actief:       { label:'Zeer actief (6-7x/week sporten)',    factor:1.725 },
+};
+const KCAL_PER_KG_VET = 7700; // vuistregel: ~7700 kcal tekort per kg lichaamsvet
+const MAX_KG_PER_WEEK = 1;    // veilig maximum tempo (ACSM/NHS: 0,5-1 kg/week)
+const MAX_DAGELIJKS_TEKORT = Math.round(MAX_KG_PER_WEEK * KCAL_PER_KG_VET / 7);
+const MIN_KCAL = { vrouw:1200, man:1500 }; // veiligheidsminimum (NHS-richtlijn)
+
+function huidigGewicht(u){
+  u = u || activeUser();
+  if(!u || u.weights.length === 0) return null;
+  return u.weights[u.weights.length-1].gewicht;
+}
+function calcBMR(p, gewicht){
+  // Mifflin-St Jeor: mannen +5, vrouwen -161
+  return 10*gewicht + 6.25*p.lengte - 5*p.leeftijd + (p.geslacht==='man' ? 5 : -161);
+}
+function calcTargets(u){
+  u = u || activeUser();
+  const p = u && u.profile;
+  const gewicht = huidigGewicht(u);
+  if(!p || !gewicht) return null;
+  const bmr = calcBMR(p, gewicht);
+  const tdee = bmr * ACTIVITEIT_FACTOR[p.activiteit].factor;
+
+  const teVerliezen = Math.max(0, gewicht - (p.streefgewicht || gewicht));
+  const termijnMaanden = p.termijnMaanden || 6;
+  const dagen = Math.max(1, Math.round(termijnMaanden * 30.44));
+  let dagelijksTekort = teVerliezen > 0 ? (teVerliezen * KCAL_PER_KG_VET) / dagen : 0;
+  const teAgressief = dagelijksTekort > MAX_DAGELIJKS_TEKORT;
+  if(teAgressief) dagelijksTekort = MAX_DAGELIJKS_TEKORT;
+
+  const minKcal = MIN_KCAL[p.geslacht] || MIN_KCAL.vrouw;
+  const kcalDoel = Math.max(minKcal, Math.round(tdee - dagelijksTekort));
+  const eiwitDoel = Math.round(gewicht * 1.8);          // g eiwit
+  const vetDoel = Math.round((kcalDoel*0.27)/9);        // g vet, ~27% kcal
+  const koolDoel = Math.max(0, Math.round((kcalDoel - eiwitDoel*4 - vetDoel*9)/4));
+  const wekelijksTempo = (dagelijksTekort * 7) / KCAL_PER_KG_VET;
+  return {
+    bmr:Math.round(bmr), tdee:Math.round(tdee), kcalDoel, eiwitDoel, vetDoel, koolDoel,
+    teVerliezen, termijnMaanden, dagelijksTekort:Math.round(dagelijksTekort), teAgressief, wekelijksTempo
+  };
+}
+function programmaSuggestie(geslacht){
+  // Standaardvoorstel per geslacht: vrouw -> vetverlies-gericht, man -> spieropbouw-split.
+  // Alleen een suggestie — in het formulier zelf te wijzigen naar elk ander programma.
+  return geslacht === 'man' ? 'ppl' : 'benen_cardio';
+}
+function calcBMI(gewicht, lengteCm){
+  const l = lengteCm/100;
+  return gewicht / (l*l);
+}
+function bmiCategorie(bmi){
+  if(bmi < 18.5) return {label:'Ondergewicht', kleur:'var(--warning)'};
+  if(bmi < 25)   return {label:'Gezond gewicht', kleur:'var(--good)'};
+  if(bmi < 30)   return {label:'Overgewicht', kleur:'var(--warning)'};
+  return {label:'Obesitas', kleur:'var(--critical)'};
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VOEDINGSDATABASE — veelvoorkomende producten (NEVO-achtige schattingen)
+══════════════════════════════════════════════════════════════ */
+const FOOD_DB = {
+  'Ontbijt': [
+    {naam:'Volkoren boterham met kaas', kcal:180, eiwit:9, kool:16, vet:9},
+    {naam:'Volkoren boterham met pindakaas', kcal:220, eiwit:8, kool:18, vet:12},
+    {naam:'Kom havermout met melk', kcal:300, eiwit:12, kool:45, vet:8},
+    {naam:'Gekookt ei', kcal:78, eiwit:6, kool:1, vet:5},
+    {naam:'Magere yoghurt (150g)', kcal:90, eiwit:15, kool:8, vet:0},
+    {naam:'Magere kwark (150g)', kcal:110, eiwit:18, kool:6, vet:1},
+  ],
+  'Fruit & groente': [
+    {naam:'Appel', kcal:80, eiwit:0, kool:21, vet:0},
+    {naam:'Banaan', kcal:105, eiwit:1, kool:27, vet:0},
+    {naam:'Handje noten (25g)', kcal:150, eiwit:5, kool:4, vet:13},
+    {naam:'Broccoli (100g)', kcal:35, eiwit:3, kool:4, vet:0},
+    {naam:'Komkommer/tomaat', kcal:15, eiwit:1, kool:3, vet:0},
+    {naam:'Groene salade', kcal:20, eiwit:1, kool:3, vet:0},
+  ],
+  'Hoofdmaaltijd': [
+    {naam:'Kipfilet gegrild (100g)', kcal:165, eiwit:31, kool:0, vet:4},
+    {naam:'Zalm (100g)', kcal:200, eiwit:20, kool:0, vet:13},
+    {naam:'Gekookte rijst (150g)', kcal:195, eiwit:4, kool:43, vet:0},
+    {naam:'Gekookte aardappelen (200g)', kcal:172, eiwit:4, kool:34, vet:0},
+    {naam:'Volkoren pasta gekookt (200g)', kcal:250, eiwit:9, kool:48, vet:2},
+    {naam:'Groentesoep (1 kom)', kcal:90, eiwit:3, kool:12, vet:3},
+  ],
+  'Snacks & dranken': [
+    {naam:'Volkoren cracker (2 stuks)', kcal:60, eiwit:1, kool:10, vet:2},
+    {naam:'Plakje 48+ kaas (30g)', kcal:100, eiwit:7, kool:0, vet:8},
+    {naam:'Koffie zwart', kcal:2, eiwit:0, kool:0, vet:0},
+    {naam:'Koffie met melk', kcal:30, eiwit:1, kool:2, vet:1},
+    {naam:'Glas wijn', kcal:120, eiwit:0, kool:4, vet:0},
+    {naam:'2 blokjes chocolade', kcal:100, eiwit:1, kool:11, vet:6},
+  ],
+};
+
+/* ══════════════════════════════════════════════════════════════
+   TRAININGSPROGRAMMA'S — elk profiel kiest er één.
+   Machine-gebaseerde oefeningen (veilig en toegankelijk voor
+   beginners), volgens ACSM/WHO-richtlijn: 2-3+ krachttrainingen per
+   week, geleidelijk opbouwen.
+══════════════════════════════════════════════════════════════ */
+/* ── OEFENINGENBIBLIOTHEEK ──
+   Gebaseerd op het aanbod van apps als Strong en Hevy: per spiergroep
+   de gangbare machine-, kabel-, dumbbell- en lichaamsgewicht-oefeningen.
+   Elk programma stelt een standaardselectie voor; de gebruiker kan per
+   training oefeningen toevoegen of weglaten via de bibliotheek. */
+const EXERCISE_DB = {
+  /* Borst */
+  chest_press:      {naam:'Chest press (machine)', groep:'Borst', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Zit met een rechte rug, duw de handvatten naar voren tot je armen bijna gestrekt zijn en breng ze gecontroleerd terug.'},
+  chest_fly:        {naam:'Chest fly (machine)', groep:'Borst', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Breng je armen in een boogbeweging naar elkaar toe voor je borst, open ze daarna weer langzaam.'},
+  bench_press:      {naam:'Bankdrukken (halterstang)', groep:'Borst', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Lig op de bank, pak de stang iets breder dan schouderbreedte, laat hem gecontroleerd naar je borst zakken en duw hem weer omhoog.'},
+  db_press:         {naam:'Dumbbell press (plat bankje)', groep:'Borst', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Lig op de bank met een dumbbell in elke hand op borsthoogte, duw ze omhoog tot je armen bijna gestrekt zijn.'},
+  incline_db_press: {naam:'Incline dumbbell press', groep:'Borst', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Zelfde als dumbbell press, maar op een schuin bankje (30-45°) voor meer nadruk op de bovenkant van je borst.'},
+  cable_crossover:  {naam:'Kabel crossover', groep:'Borst', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Sta tussen twee kabels, breng de handvatten in een boog voor je borst samen en laat ze langzaam terugkomen.'},
+  pushup:           {naam:'Push-up', groep:'Borst', setCount:3, eenheid:'reps', bodyweight:true, rustSec:60, uitleg:'Handen op schouderbreedte, lichaam in een rechte lijn. Zak tot je borst bijna de grond raakt en duw jezelf omhoog. Op de knieën is een prima beginnersvariant.'},
+  /* Rug */
+  lat_pulldown:     {naam:'Lat pulldown', groep:'Rug', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Pak de stang breed vast, trek deze naar je bovenborst en laat hem langzaam weer omhoog komen tot je armen gestrekt zijn.'},
+  seated_row:       {naam:'Roeien zittend (kabel)', groep:'Rug', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Trek de handvatten naar je buik, schouders naar achteren en beneden, laat gecontroleerd terugkomen.'},
+  row_machine:      {naam:'Roeien (machine)', groep:'Rug', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Borst tegen het steunkussen, trek de handvatten naar je toe en knijp je schouderbladen samen.'},
+  db_row:           {naam:'Dumbbell row', groep:'Rug', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Steun met één hand en knie op een bankje, trek de dumbbell met de andere arm naar je heup. Wissel per set van kant.'},
+  assisted_pullup:  {naam:'Pull-up (assisted machine)', groep:'Rug', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Kniel op het steunplatform van de machine en trek jezelf op tot je kin boven de stang komt. Meer tegengewicht = makkelijker.'},
+  face_pull:        {naam:'Face pull (kabel)', groep:'Rug', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Trek de kabel naar je gezicht met je ellebogen hoog, knijp je schouderbladen samen.'},
+  back_extension:   {naam:'Back extension', groep:'Rug', setCount:3, eenheid:'reps', bodyweight:true, rustSec:60, uitleg:'Lig met je heupen op het kussen van het toestel, zak rustig naar voren en kom met een rechte rug weer omhoog.'},
+  /* Schouders */
+  shoulder_press:   {naam:'Schouderpers (machine)', groep:'Schouders', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Duw de handvatten omhoog tot je armen bijna gestrekt zijn, breng ze terug tot je ellebogen op schouderhoogte zijn.'},
+  db_shoulder_press:{naam:'Dumbbell shoulder press', groep:'Schouders', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Zit rechtop met een dumbbell naast elk oor, duw ze omhoog tot je armen bijna gestrekt zijn.'},
+  lateral_raise:    {naam:'Zijwaartse heffing (lateral raise)', groep:'Schouders', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Hef de dumbbells zijwaarts tot schouderhoogte met licht gebogen ellebogen, laat ze langzaam zakken.'},
+  front_raise:      {naam:'Voorwaartse heffing (front raise)', groep:'Schouders', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Hef de dumbbells gestrekt voor je uit tot schouderhoogte en laat ze gecontroleerd zakken.'},
+  reverse_fly:      {naam:'Reverse fly (machine)', groep:'Schouders', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Zit met je borst tegen het kussen en beweeg de armen zijwaarts naar achteren; goed voor je achterste schouders en houding.'},
+  /* Armen */
+  bicep_curl_db:    {naam:'Biceps curl (dumbbell)', groep:'Armen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Buig je ellebogen om de dumbbells omhoog te brengen, houd je bovenarmen stil, laat langzaam zakken.'},
+  bicep_curl_cable: {naam:'Biceps curl (kabel)', groep:'Armen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Zelfde beweging als met dumbbells, maar de kabel houdt constante spanning op de spier.'},
+  hammer_curl:      {naam:'Hammer curl', groep:'Armen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Biceps curl met de handpalmen naar elkaar toe; traint ook je onderarmen.'},
+  preacher_curl:    {naam:'Preacher curl (machine)', groep:'Armen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Armen op het schuine kussen, krul het gewicht omhoog en laat het extra langzaam zakken.'},
+  tricep_pushdown:  {naam:'Triceps pushdown (kabel)', groep:'Armen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Duw de stang omlaag tot je armen gestrekt zijn, houd je ellebogen tegen je lichaam, kom gecontroleerd terug.'},
+  overhead_tricep:  {naam:'Overhead triceps extensie', groep:'Armen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Houd één dumbbell met beide handen boven je hoofd, laat hem achter je hoofd zakken en strek je armen weer.'},
+  tricep_dips:      {naam:'Triceps dips (assisted machine)', groep:'Armen', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Zak gecontroleerd door je ellebogen te buigen en duw jezelf weer omhoog; het steunplatform maakt het lichter.'},
+  /* Benen */
+  leg_press:        {naam:'Beenpers (legpress)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Zit rechtop, plaats je voeten schouderbreedte uit elkaar op de plaat. Duw de plaat weg zonder je knieën helemaal te strekken (op slot), kom daarna langzaam terug.'},
+  squat:            {naam:'Squat (halterstang)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Stang op je bovenrug, voeten op schouderbreedte. Zak alsof je op een stoel gaat zitten tot je bovenbenen horizontaal zijn en kom weer omhoog.'},
+  goblet_squat:     {naam:'Goblet squat (dumbbell)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Houd één dumbbell verticaal tegen je borst en zak in een diepe squat; ideaal om de squat-techniek te leren.'},
+  leg_extension:    {naam:'Beenstrekking (leg extension)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Strek je knieën om het gewicht omhoog te brengen, laat het daarna langzaam weer zakken.'},
+  leg_curl:         {naam:'Beenbuiging (leg curl)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Buig je knieën om het gewicht te bewegen, laat daarna gecontroleerd weer zakken zonder het gewicht te laten vallen.'},
+  lunges:           {naam:'Lunges (uitvalspassen)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Stap ruim naar voren en zak tot beide knieën ongeveer 90° gebogen zijn, duw jezelf terug. Eventueel met dumbbells in de handen.'},
+  bulgarian_split:  {naam:'Bulgarian split squat', groep:'Benen', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Achterste voet op een bankje, zak op je voorste been en kom weer omhoog. Wissel per set van been.'},
+  rdl:              {naam:'Romanian deadlift', groep:'Benen', setCount:3, eenheid:'reps', rustSec:90, uitleg:'Houd de stang of dumbbells voor je bovenbenen, duw je heupen naar achteren en zak met een rechte rug tot je rek in je hamstrings voelt.'},
+  calf_raise:       {naam:'Calf raise staand', groep:'Benen', setCount:3, eenheid:'reps', rustSec:45, uitleg:'Kom op je tenen omhoog door je kuiten aan te spannen, zak daarna langzaam weer terug tot net onder startpositie.'},
+  calf_raise_seated:{naam:'Calf raise zittend', groep:'Benen', setCount:3, eenheid:'reps', rustSec:45, uitleg:'Zittend met het kussen op je knieën: kom op je tenen omhoog, span je kuiten aan en zak langzaam terug.'},
+  hip_adduction:    {naam:'Hip adductie (machine)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Knijp je benen tegen de weerstand in naar elkaar toe en laat ze langzaam weer openen; traint je binnenkant bovenbeen.'},
+  hip_abduction:    {naam:'Hip abductie (machine)', groep:'Benen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Duw je benen tegen de weerstand in uit elkaar; traint je buitenkant heup en bil.'},
+  /* Billen */
+  hip_thrust:       {naam:'Hip thrust (machine of stang)', groep:'Billen', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Rug tegen een bank, duw je heupen omhoog tot je lichaam een rechte lijn vormt, knijp je billen samen, kom daarna gecontroleerd terug.'},
+  glute_kickback:   {naam:'Glute kickback (kabel)', groep:'Billen', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Met de enkelband om: trap je been gestrekt naar achteren en knijp je bil bovenin samen. Wissel per set van been.'},
+  sumo_squat:       {naam:'Sumo squat (dumbbell)', groep:'Billen', setCount:3, eenheid:'reps', rustSec:75, uitleg:'Voeten breed en tenen naar buiten, dumbbell tussen je benen. Zak diep en kom omhoog; extra nadruk op billen en binnenkant benen.'},
+  /* Buik & core */
+  plank:            {naam:'Plank', groep:'Buik & core', setCount:3, eenheid:'sec', bodyweight:true, rustSec:45, uitleg:'Steun op je onderarmen en tenen, houd je rug recht (geen holle rug of bult) en span je buik aan.'},
+  side_plank:       {naam:'Zij-plank', groep:'Buik & core', setCount:3, eenheid:'sec', bodyweight:true, rustSec:45, uitleg:'Steun op één onderarm met je lichaam in een rechte lijn, houd je heup omhoog. Herhaal aan beide kanten.'},
+  crunch_machine:   {naam:'Crunch (machine)', groep:'Buik & core', setCount:3, eenheid:'reps', rustSec:60, uitleg:'Rol je bovenlichaam gecontroleerd op tegen de weerstand in en kom langzaam terug.'},
+  leg_raises:       {naam:'Leg raises', groep:'Buik & core', setCount:3, eenheid:'reps', bodyweight:true, rustSec:60, uitleg:'Lig op je rug, hef je gestrekte benen tot 90° en laat ze langzaam zakken zonder de grond te raken.'},
+  russian_twist:    {naam:'Russian twist', groep:'Buik & core', setCount:3, eenheid:'reps', bodyweight:true, rustSec:45, uitleg:'Zit met opgetrokken knieën, leun licht achterover en draai je romp afwisselend naar links en rechts, eventueel met een gewichtje.'},
+};
+const SPIERGROEPEN = ['Borst','Rug','Schouders','Armen','Benen','Billen','Buik & core'];
+
+const PROGRAMS = {
+  fullbody: {
+    naam: 'Full Body (3x/week)',
+    schema: ['A','B'],
+    perWeek: 3,
+    workouts: {
+      A: { naam:'Workout A — Full Body', oefeningen:['leg_press','chest_press','lat_pulldown','shoulder_press','plank'] },
+      B: { naam:'Workout B — Full Body', oefeningen:['leg_curl','seated_row','chest_fly','leg_extension','side_plank'] }
+    }
+  },
+  benen_cardio: {
+    naam: 'Benen & Cardio',
+    schema: ['A','B'],
+    perWeek: 3,
+    cardio: true,
+    workouts: {
+      A: { naam:'Benen A + Cardio', oefeningen:['leg_press','leg_extension','leg_curl','calf_raise','plank'] },
+      B: { naam:'Benen B + Cardio', oefeningen:['hip_thrust','hip_abduction','leg_curl','calf_raise_seated','side_plank'] }
+    }
+  },
+  ppl: {
+    naam: 'Push Pull Legs',
+    schema: ['Push','Pull','Legs'],
+    perWeek: 3,
+    workouts: {
+      Push: { naam:'Push — Borst, Schouders, Triceps', oefeningen:['chest_press','shoulder_press','chest_fly','tricep_pushdown'] },
+      Pull: { naam:'Pull — Rug, Biceps', oefeningen:['lat_pulldown','seated_row','face_pull','bicep_curl_db'] },
+      Legs: { naam:'Legs — Bovenbeen, Kuiten', oefeningen:['leg_press','leg_curl','leg_extension','calf_raise'] }
+    }
+  }
+};
+/* Cardio-activiteiten met MET-waarden (Compendium of Physical Activities).
+   Verbrande kcal = MET × lichaamsgewicht (kg) × duur (uren). */
+const CARDIO_DB = {
+  'Wandelen':     { rustig:3.0, gemiddeld:3.8, stevig:5.0 },
+  'Hardlopen':    { rustig:7.0, gemiddeld:8.3, stevig:9.8 },
+  'Fietsen':      { rustig:4.0, gemiddeld:6.0, stevig:8.0 },
+  'Loopband':     { rustig:3.5, gemiddeld:4.5, stevig:6.0 },
+  'Crosstrainer': { rustig:4.5, gemiddeld:5.5, stevig:7.0 },
+  'Stairmaster':  { rustig:6.0, gemiddeld:8.0, stevig:9.0 },
+  'Roeimachine':  { rustig:4.8, gemiddeld:7.0, stevig:8.5 },
+  'Zwemmen':      { rustig:4.5, gemiddeld:6.0, stevig:8.0 },
+};
+/* Monochrome lijn-iconen (Tabler-stijl, zelfde grammatica als de navigatiebalk) */
+const CARDIO_ICONS = {
+  'Wandelen': '<path d="M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/>',
+  'Hardlopen': '<path d="M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M4 17l5 1l.75 -1.5"/><path d="M15 21v-4l-4 -3l1 -6"/><path d="M7 12v-3l5 -1l3 3l3 1"/>',
+  'Fietsen': '<path d="M5 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M19 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12 19v-4l-3 -3l5 -4l2 3h3"/><path d="M17 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>',
+  'Loopband': '<path d="M13 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 12v-2l4 -1l2.5 2.5l2.5 .5"/><path d="M14 17.5v-3.5l-3 -2.5l.75 -4.5"/><path d="M5 17.5l3.5 .5l.5 -1"/><path d="M3 21h15l3 -10"/>',
+  'Crosstrainer': '<path d="M12 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M12 6v5"/><path d="M12 8l-3.5 1.4"/><path d="M12 8l3.5 1.4"/><path d="M8.5 7v13"/><path d="M15.5 7v13"/><path d="M12 11l-2.5 5.5"/><path d="M12 11l2.5 5.5"/><path d="M8 19.5h3"/><path d="M13 19.5h3"/>',
+  'Stairmaster': '<path d="M4 20h4v-4h4v-4h4v-4h4"/>',
+  'Roeimachine': '<path d="M6 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6.8 9l2 4.5"/><path d="M7.6 10.6l5.4 1.4"/><path d="M13 12h5"/><path d="M8.8 13.5l4.2 -.8l4 2.8"/><path d="M3 19h18"/>',
+  'Zwemmen': '<path d="M16 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 11l4 -2l3.5 3l-1.5 2"/><path d="M3 16.75a2.4 2.4 0 0 0 1 .25a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 1 -.25"/>',
+};
+function cardioIcon(type, variant){
+  const p = CARDIO_ICONS[type];
+  if(!p) return '';
+  const cls = variant === 'inline' ? 'ci-inline' : 'ci-svg';
+  return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+const TEMPO_LABELS = { rustig:'Rustig', gemiddeld:'Gemiddeld', stevig:'Stevig' };
+const CARDIO_TYPES = Object.keys(CARDIO_DB);
+
+function cardioKcal(type, tempo, minuten, gewicht){
+  const met = (CARDIO_DB[type] && CARDIO_DB[type][tempo]) || 5;
+  return Math.round(met * (gewicht || 70) * (minuten / 60));
+}
+function verbrandOpDag(u, ds){
+  return ((u.activityLog && u.activityLog[ds]) || []).reduce((s,a)=>s+(a.kcal||0),0);
+}
+const TIPS_DAILY = [
+  'Warm 5-10 minuten rustig op (bijv. fietsen of lopend bandje) voordat je begint met krachttraining.',
+  'Sluit af met 5 minuten rustig uitrekken van de gebruikte spieren.',
+  'Voel je een oefening na een paar weken makkelijk? Verhoog dan het gewicht met de kleinste stap die de machine toelaat.',
+  'Neem minstens 1 dag rust tussen twee krachttrainingen zodat je spieren kunnen herstellen.',
+  'Naast krachttraining helpt ook wandelen of fietsen: streef naar zo\'n 150 minuten matige beweging per week (WHO-richtlijn).',
+];
+
+/* ══════════════════════════════════════════════════════════════
+   NAVIGATIE
+══════════════════════════════════════════════════════════════ */
+let activeTab = 'dashboard';
+let voedingDatum = todayStr();
+let voortgangView = 'grafiek';
+let calMaandOffset = 0;   // 0 = huidige maand, -1 = vorige, enz.
+let calSelectedDag = null;
+const MOMENTEN = ['Ontbijt','Lunch','Diner','Snack'];
+const SERIES_COLORS = ['#2a78d6','#1baf7a','#eda100','#008300','#4a3aa7','#e34948','#e87ba4','#eb6834'];
+function gokMoment(){
+  const h = new Date().getHours();
+  if(h<11) return 'Ontbijt';
+  if(h<15) return 'Lunch';
+  if(h<18) return 'Snack';
+  return 'Diner';
+}
+let voedingMoment = gokMoment();
+
+function svgRing(pct, colorVar, size, stroke){
+  const r = (size-stroke)/2;
+  const c = 2*Math.PI*r;
+  const off = c*(1-Math.min(Math.max(pct,0),100)/100);
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${colorVar}" stroke-width="${stroke}" stroke-linecap="round"
+        stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    </svg>`;
+}
+
+function macroRow(label, waarde, doel, kleur){
+  const pct = doel>0 ? Math.min(100, Math.round(waarde/doel*100)) : 0;
+  return `
+    <div>
+      <div class="row" style="margin-bottom:5px;">
+        <span style="font-size:12.5px;color:var(--text2);font-weight:600;">${label}</span>
+        <span style="font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;">${waarde}g / ${doel}g</span>
+      </div>
+      <div class="progress-outer"><div class="progress-inner" style="width:${pct}%;background:${kleur};"></div></div>
+    </div>`;
+}
+
+function setTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('nav.tabbar button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  render();
+  const view = document.getElementById('view');
+  if(view && view.classList){
+    view.classList.remove('anim');
+    void (view.offsetWidth || 0); // reflow zodat de animatie opnieuw afspeelt
+    view.classList.add('anim');
+  }
+  const main = document.querySelector('main');
+  if(main && main.scrollTo) main.scrollTo(0,0);
+  if(window.scrollTo) window.scrollTo(0,0);
+}
+
+let toastTimer = null;
+function showToast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  document.getElementById('app').appendChild(t);
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{
+    t.classList.add('hide');
+    setTimeout(()=>t.remove(), 260);
+  }, 1800);
+}
+
+function render(){
+  renderProfileBar();
+  updateHeader();
+  const view = document.getElementById('view');
+  if(!activeUser()){ view.innerHTML=''; showOnboarding(); return; }
+  if(activeTab==='dashboard') view.innerHTML = renderDashboard();
+  else if(activeTab==='voeding') view.innerHTML = renderVoeding();
+  else if(activeTab==='voortgang') view.innerHTML = renderVoortgang();
+  else if(activeTab==='workouts') view.innerHTML = renderWorkouts();
+  else if(activeTab==='cardio') view.innerHTML = renderCardio();
+}
+
+function updateHeader(){
+  const g = document.getElementById('greeting');
+  const s = document.getElementById('headerSub');
+  const u = activeUser();
+  if(u){
+    g.textContent = `Hallo, ${u.naam}!`;
+    s.textContent = new Date().toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'});
+  } else {
+    g.textContent = 'TogetherFit';
+    s.textContent = 'Jouw persoonlijke coach voor voeding & bewegen';
+  }
+}
+
+function renderProfileBar(){
+  const el = document.getElementById('profileBar');
+  if(!el) return;
+  const ids = Object.keys(state.users);
+  if(!ids.length){ el.innerHTML=''; return; }
+  el.innerHTML = ids.map(id=>{
+    const u = state.users[id];
+    return `<button class="profile-pill ${id===state.activeUserId?'active':''}" onclick="switchUser('${id}')">${u.naam}</button>`;
+  }).join('') + `<button class="profile-pill add" onclick="showOnboarding()">&#43; Nieuw</button>`;
+}
+function switchUser(id){
+  state.activeUserId = id;
+  currentSets = {};
+  sessionKey = '';
+  cardioForm = {type:'Wandelen', tempo:'gemiddeld', minuten:'', afstand:''};
+  calSelectedDag = null;
+  stopRest();
+  save();
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ONBOARDING
+══════════════════════════════════════════════════════════════ */
+function showOnboarding(){
+  const isFirst = Object.keys(state.users).length === 0;
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg onboard';
+  bg.innerHTML = `
+    <div class="modal">
+      <div class="row" style="align-items:flex-start;">
+        <h3 style="margin-bottom:4px;">${isFirst ? 'Welkom! Laten we starten' : 'Nieuw profiel toevoegen'} &#128075;</h3>
+        <button class="modal-close" onclick="closeOnboarding()" aria-label="Sluiten">&#10005;</button>
+      </div>
+      <p style="font-size:13.5px;color:var(--text2);margin-top:-4px;">
+        Vul deze gegevens in zodat we een persoonlijk voedings- en beweegplan kunnen berekenen. Ieder gezinslid krijgt een eigen profiel.
+      </p>
+      <label>Naam</label>
+      <input id="ob_naam" placeholder="Bijv. Mama of Papa">
+      <label>Geslacht</label>
+      <select id="ob_geslacht" onchange="document.getElementById('ob_programma').value = programmaSuggestie(this.value);">
+        <option value="vrouw">Vrouw</option>
+        <option value="man">Man</option>
+      </select>
+      <label>Leeftijd (jaar)</label>
+      <input id="ob_leeftijd" type="number" min="18" max="100" placeholder="Bijv. 55">
+      <label>Lengte (cm)</label>
+      <input id="ob_lengte" type="number" placeholder="Bijv. 174">
+      <label>Huidig gewicht (kg)</label>
+      <input id="ob_gewicht" type="number" step="0.1" placeholder="Bijv. 77.7">
+      <label>Streefgewicht (kg)</label>
+      <input id="ob_streef" type="number" step="0.1" placeholder="Bijv. 68">
+      <label>In hoeveel maanden wil je dit bereiken?</label>
+      <input id="ob_termijn" type="number" min="1" max="36" placeholder="Bijv. 9">
+      <label>Beweegniveau (buiten sporten om)</label>
+      <select id="ob_activiteit">
+        ${Object.entries(ACTIVITEIT_FACTOR).map(([k,v])=>`<option value="${k}" ${k==='licht'?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+      <label>Trainingsprogramma</label>
+      <select id="ob_programma">
+        ${Object.entries(PROGRAMS).map(([k,v])=>`<option value="${k}" ${k===programmaSuggestie('vrouw')?'selected':''}>${v.naam}</option>`).join('')}
+      </select>
+      <p style="font-size:11.5px;color:var(--text3);margin:4px 0 0 0;">Standaard voorgesteld op basis van geslacht (vrouw &rarr; Benen &amp; Cardio, man &rarr; Push Pull Legs) &mdash; kies zelf een ander programma als je dat liever wilt.</p>
+      <div class="modal-actions">
+        <button class="btn block" onclick="saveOnboarding()">${isFirst ? 'Aan de slag!' : 'Profiel toevoegen'}</button>
+      </div>
+      ${!isFirst ? `<button class="btn ghost block" style="margin-top:8px;" onclick="closeModal()">Annuleren</button>` : ''}
+      <p style="font-size:11.5px;color:var(--text3);margin-bottom:0;">
+        Let op: dit is een hulpmiddel op basis van algemene richtlijnen, geen medisch advies. Overleg bij twijfel met een huisarts of diëtist.
+      </p>
+    </div>`;
+  document.getElementById('app').appendChild(bg);
+}
+function closeOnboarding(){
+  const m = document.querySelector('.modal-bg.onboard');
+  if(m) m.remove();
+}
+
+function saveOnboarding(){
+  const naam = document.getElementById('ob_naam').value.trim();
+  const geslacht = document.getElementById('ob_geslacht').value;
+  const leeftijd = parseInt(document.getElementById('ob_leeftijd').value);
+  const lengte = parseFloat(document.getElementById('ob_lengte').value);
+  const gewicht = parseFloat(document.getElementById('ob_gewicht').value);
+  const streef = parseFloat(document.getElementById('ob_streef').value);
+  const termijnMaanden = parseFloat(document.getElementById('ob_termijn').value);
+  const activiteit = document.getElementById('ob_activiteit').value;
+  const programma = document.getElementById('ob_programma').value;
+  if(!naam || !leeftijd || !lengte || !gewicht){
+    alert('Vul in ieder geval naam, leeftijd, lengte en gewicht in.');
+    return;
+  }
+  const id = 'user_' + Date.now();
+  state.users[id] = {
+    naam,
+    profile: {
+      leeftijd, lengte, geslacht, activiteit, programma,
+      streefgewicht: streef || Math.round((gewicht-8)*10)/10,
+      termijnMaanden: termijnMaanden || 6
+    },
+    weights: [{datum: todayStr(), gewicht}],
+    foodLog: {},
+    activityLog: {},
+    workout: { volgende: PROGRAMS[programma].schema[0], historie: [] }
+  };
+  state.activeUserId = id;
+  save();
+  const modal = document.querySelector('.modal-bg.onboard');
+  if(modal) modal.remove();
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROFIEL-INSTELLINGEN (gear-icon modal)
+══════════════════════════════════════════════════════════════ */
+function openProfileModal(){
+  const u = activeUser();
+  if(!u) return;
+  const p = u.profile;
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal">
+      <h3>Profiel & instellingen</h3>
+      <label>Naam</label>
+      <input id="pf_naam" value="${u.naam}">
+      <label>Geslacht</label>
+      <select id="pf_geslacht" onchange="document.getElementById('pf_programma').value = programmaSuggestie(this.value);">
+        <option value="vrouw" ${p.geslacht!=='man'?'selected':''}>Vrouw</option>
+        <option value="man" ${p.geslacht==='man'?'selected':''}>Man</option>
+      </select>
+      <label>Leeftijd (jaar)</label>
+      <input id="pf_leeftijd" type="number" value="${p.leeftijd}">
+      <label>Lengte (cm)</label>
+      <input id="pf_lengte" type="number" value="${p.lengte}">
+      <label>Streefgewicht (kg)</label>
+      <input id="pf_streef" type="number" step="0.1" value="${p.streefgewicht}">
+      <label>In hoeveel maanden wil je dit bereiken?</label>
+      <input id="pf_termijn" type="number" min="1" max="36" value="${p.termijnMaanden || 6}">
+      <label>Beweegniveau</label>
+      <select id="pf_activiteit">
+        ${Object.entries(ACTIVITEIT_FACTOR).map(([k,v])=>`<option value="${k}" ${k===p.activiteit?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+      <label>Trainingsprogramma</label>
+      <select id="pf_programma">
+        ${Object.entries(PROGRAMS).map(([k,v])=>`<option value="${k}" ${k===p.programma?'selected':''}>${v.naam}</option>`).join('')}
+      </select>
+      <div class="modal-actions">
+        <button class="btn secondary" style="flex:1" onclick="closeModal()">Annuleren</button>
+        <button class="btn" style="flex:1" onclick="saveProfile()">Opslaan</button>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+      <button class="btn danger block" onclick="deleteActiveUser()">Dit profiel verwijderen</button>
+    </div>`;
+  document.getElementById('app').appendChild(bg);
+}
+function closeModal(){
+  const m = document.querySelector('.modal-bg');
+  if(m) m.remove();
+}
+function saveProfile(){
+  const u = activeUser();
+  const p = u.profile;
+  u.naam = document.getElementById('pf_naam').value.trim() || u.naam;
+  p.geslacht = document.getElementById('pf_geslacht').value;
+  p.leeftijd = parseInt(document.getElementById('pf_leeftijd').value) || p.leeftijd;
+  p.lengte = parseFloat(document.getElementById('pf_lengte').value) || p.lengte;
+  p.streefgewicht = parseFloat(document.getElementById('pf_streef').value) || p.streefgewicht;
+  p.termijnMaanden = parseFloat(document.getElementById('pf_termijn').value) || p.termijnMaanden;
+  p.activiteit = document.getElementById('pf_activiteit').value;
+  const nieuwProgramma = document.getElementById('pf_programma').value;
+  if(nieuwProgramma !== p.programma){
+    p.programma = nieuwProgramma;
+    u.workout.volgende = PROGRAMS[nieuwProgramma].schema[0];
+  }
+  save();
+  closeModal();
+  render();
+}
+function deleteActiveUser(){
+  if(!confirm('Weet je zeker dat je dit profiel wilt verwijderen? Alle gegevens van dit profiel gaan verloren.')) return;
+  delete state.users[state.activeUserId];
+  const remaining = Object.keys(state.users);
+  state.activeUserId = remaining.length ? remaining[0] : null;
+  currentSets = {};
+  sessionKey = '';
+  cardioForm = {type:'Wandelen', tempo:'gemiddeld', minuten:'', afstand:''};
+  stopRest();
+  save();
+  closeModal();
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════════════════ */
+function renderDashboard(){
+  const u = activeUser();
+  const targets = calcTargets(u);
+  const gewicht = huidigGewicht(u);
+  const p = u.profile;
+  const log = u.foodLog[todayStr()] || [];
+  const kcalVandaag = log.reduce((s,i)=>s+i.kcal,0);
+  const eiwitVandaag = log.reduce((s,i)=>s+(i.eiwit||0),0);
+
+  let calorieBlock = '';
+  if(targets){
+    const verbrand = verbrandOpDag(u, todayStr());
+    const budget = targets.kcalDoel + verbrand;
+    const pct = Math.min(100, Math.round((kcalVandaag/budget)*100));
+    const over = kcalVandaag > budget;
+    const barColor = over ? 'var(--critical)' : (pct>85 ? 'var(--warning)' : 'var(--good)');
+    calorieBlock = `
+      <div class="card">
+        <h3>Calorieën vandaag</h3>
+        <div class="row" style="margin-bottom:8px;">
+          <span style="font-family:var(--font-display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.3px;">${kcalVandaag}</span>
+          <span style="font-size:13.5px;color:var(--text2);">budget: ${budget} kcal${verbrand>0?` (doel ${targets.kcalDoel} + ${verbrand} sport)`:''}</span>
+        </div>
+        <div class="progress-outer"><div class="progress-inner" style="width:${pct}%;background:${barColor};"></div></div>
+        <div style="margin-top:8px;">
+          ${over ? `<span class="badge critical">&#9888; ${kcalVandaag-budget} kcal boven budget</span>`
+                 : `<span class="badge good">&#10003; nog ${budget-kcalVandaag} kcal over</span>`}
+          ${verbrand>0 ? ` <span class="badge good">&#128293; ${verbrand} kcal verbrand</span>` : ''}
+        </div>
+      </div>`;
+  }
+
+  let weightBlock = '';
+  if(gewicht){
+    const bmi = calcBMI(gewicht, p.lengte);
+    const cat = bmiCategorie(bmi);
+    const verschil = p.streefgewicht ? (gewicht - p.streefgewicht) : null;
+    weightBlock = `
+      <div class="card">
+        <h3>Gewicht</h3>
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="v">${gewicht} kg</div><div class="l">Huidig gewicht</div></div>
+          <div class="stat-tile"><div class="v">${p.streefgewicht ?? '—'} kg</div><div class="l">Streefgewicht</div></div>
+          <div class="stat-tile"><div class="v">${bmi.toFixed(1)}</div><div class="l"><span style="color:${cat.kleur};font-weight:700;">BMI</span> &middot; ${cat.label}</div></div>
+          <div class="stat-tile"><div class="v">${verschil!==null ? (verschil>0?'-':'+')+Math.abs(verschil).toFixed(1) : '—'} kg</div><div class="l">Nog te gaan</div></div>
+        </div>
+      </div>`;
+  }
+
+  const program = PROGRAMS[p.programma];
+  const volgende = u.workout.volgende;
+  const w = program.workouts[volgende];
+  const dezeWeek = u.workout.historie.filter(h=>{
+    const d = new Date(h.datum), now = new Date();
+    const diff = (now-d)/86400000;
+    return diff < 7;
+  }).length;
+
+  const workoutBlock = `
+    <div class="card">
+      <h3>Volgende training</h3>
+      <div class="row">
+        <div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-.2px;">${w.naam}</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px;">${w.oefeningen.length} oefeningen &middot; ${dezeWeek}/${program.perWeek} trainingen deze week</div>
+        </div>
+        <button class="btn secondary" onclick="setTab('workouts')">Bekijk</button>
+      </div>
+    </div>`;
+
+  const tip = TIPS_DAILY[new Date().getDate() % TIPS_DAILY.length];
+
+  return `
+    ${calorieBlock}
+    ${weightBlock}
+    ${workoutBlock}
+    <div class="card" style="background:var(--brand-light);border-color:var(--brand-light);">
+      <h3 style="color:var(--brand-dark);">&#128161; Tip van vandaag</h3>
+      <p style="margin:0;font-size:14px;line-height:1.45;">${tip}</p>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VOEDING
+══════════════════════════════════════════════════════════════ */
+function renderVoeding(){
+  const u = activeUser();
+  const targets = calcTargets(u);
+  const log = u.foodLog[voedingDatum] || [];
+  const kcal = log.reduce((s,i)=>s+i.kcal,0);
+  const eiwit = log.reduce((s,i)=>s+(i.eiwit||0),0);
+  const kool = log.reduce((s,i)=>s+(i.kool||0),0);
+  const vet = log.reduce((s,i)=>s+(i.vet||0),0);
+  const verbrand = verbrandOpDag(u, voedingDatum);
+  const isToday = voedingDatum === todayStr();
+
+  let heroCard = `<div class="card"><p style="margin:0;font-size:13.5px;color:var(--text2);">Vul je profiel in (tandwiel rechtsboven) om een persoonlijk caloriedoel te zien.</p></div>`;
+  if(targets){
+    const budget = targets.kcalDoel + verbrand;
+    const pct = Math.round((kcal/budget)*100);
+    const over = kcal > budget;
+    const ringColor = over ? 'var(--critical)' : (pct>85 ? 'var(--warning)' : 'var(--good)');
+    const remaining = Math.max(0, budget-kcal);
+    heroCard = `
+      <div class="card">
+        <div class="ring-hero">
+          <div class="ring-wrap">
+            ${svgRing(pct, ringColor, 148, 14)}
+            <div class="ring-center">
+              <div class="ring-num">${over ? '+'+(kcal-budget) : remaining}</div>
+              <div class="ring-lbl">${over ? 'kcal boven doel' : 'kcal over'}</div>
+            </div>
+          </div>
+          <div class="ring-stats">
+            <div class="ring-stat"><span class="rv">${kcal}</span><span class="rl">Gegeten</span></div>
+            <div class="ring-stat"><span class="rv" style="color:var(--good);">+${verbrand}</span><span class="rl">Verbrand (sport)</span></div>
+            <div class="ring-stat"><span class="rv">${budget}</span><span class="rl">Budget${verbrand>0?` (doel ${targets.kcalDoel})`:''}</span></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:11px;">
+          ${macroRow('Eiwit', eiwit, targets.eiwitDoel, 'var(--cat-1)')}
+          ${macroRow('Koolhydraten', kool, targets.koolDoel, 'var(--cat-2)')}
+          ${macroRow('Vet', vet, targets.vetDoel, 'var(--cat-3)')}
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text2);line-height:1.5;">
+          ${targets.teVerliezen > 0
+            ? `Doel: <strong style="color:var(--text1);">${targets.teVerliezen.toFixed(1)} kg</strong> in <strong style="color:var(--text1);">${targets.termijnMaanden}</strong> maanden &rarr; ~${targets.wekelijksTempo.toFixed(2)} kg/week (tekort van ${targets.dagelijksTekort} kcal/dag)`
+            : `Je zit al op of onder je streefgewicht — dit is je onderhoudsniveau.`}
+          ${targets.teAgressief ? `<div style="margin-top:6px;"><span class="badge warning">&#9888; Tempo afgeremd naar max. 1 kg/week voor veiligheid</span></div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  const dateNav = `
+    <div class="date-nav">
+      <button onclick="voedingShiftDag(-1)">&#8592;</button>
+      <span class="dlabel">${isToday ? 'Vandaag' : fmtDate(voedingDatum)}</span>
+      <button onclick="voedingShiftDag(1)" ${isToday?'disabled':''}>&#8594;</button>
+    </div>`;
+
+  const momentSwitch = `
+    <div class="tab-switch">
+      ${MOMENTEN.map(m=>`<button class="${voedingMoment===m?'active':''}" onclick="setVoedingMoment('${m}')">${m}</button>`).join('')}
+    </div>`;
+
+  const logList = renderMealGroups(log, voedingDatum);
+
+  return `
+    ${dateNav}
+    ${heroCard}
+    <details class="tips">
+      <summary>&#127793; Hoe eet ik om gezond af te vallen?</summary>
+      <ul>
+        <li>Eet in een licht calorietekort — je persoonlijke doel hierboven is hierop berekend.</li>
+        <li>Zorg voor genoeg eiwit (vlees, vis, ei, zuivel, peulvruchten) — dit houdt je verzadigd en beschermt je spieren tijdens het afvallen.</li>
+        <li>Kies vaker volkoren producten en veel groente en fruit voor vezels en vitaminen.</li>
+        <li>Drink voldoende water, zo'n 1,5-2 liter per dag.</li>
+        <li>Niets is verboden — met mate kan alles, dat houd je makkelijker vol dan strenge verboden.</li>
+        <li>Eet regelmatig (3 maaltijden, evt. 1-2 gezonde tussendoortjes) om grip te houden op je honger.</li>
+      </ul>
+    </details>
+    <h2 class="section-title">Snel toevoegen — ${voedingMoment}</h2>
+    ${momentSwitch}
+    <input type="search" value="${foodZoek}" placeholder="Zoek een product..." style="margin-bottom:10px;"
+      oninput="foodSearch(this.value)">
+    <div id="quickAddWrap">${renderQuickAdd()}</div>
+    <button class="btn secondary block" style="margin:8px 0 16px 0;" onclick="openCustomFood()">+ Eigen product toevoegen</button>
+    <h2 class="section-title">Dagboek</h2>
+    ${logList}
+  `;
+}
+function setVoedingMoment(m){ voedingMoment = m; render(); }
+
+/* Snel toevoegen: zoekfilter + recent gebruikte producten */
+let foodZoek = '';
+function foodSearch(v){
+  foodZoek = v;
+  const wrap = document.getElementById('quickAddWrap');
+  if(wrap) wrap.innerHTML = renderQuickAdd(); // alleen de lijst verversen zodat het zoekveld focus houdt
+}
+function recenteProducten(u){
+  const seen = new Set(), out = [];
+  const dates = Object.keys(u.foodLog).sort().reverse();
+  for(const d of dates){
+    for(const f of [...u.foodLog[d]].reverse()){
+      if(seen.has(f.naam)) continue;
+      seen.add(f.naam);
+      out.push({naam:f.naam, kcal:f.kcal, eiwit:f.eiwit||0, kool:f.kool||0, vet:f.vet||0});
+      if(out.length >= 6) return out;
+    }
+  }
+  return out;
+}
+function renderQuickAdd(){
+  const u = activeUser();
+  const q = foodZoek.trim().toLowerCase();
+  const groepen = [];
+  if(!q){
+    const rec = recenteProducten(u);
+    if(rec.length) groepen.push(['&#8634; Recent gebruikt', rec]);
+  }
+  Object.entries(FOOD_DB).forEach(([cat, items])=>{
+    const gefilterd = q ? items.filter(f=>f.naam.toLowerCase().includes(q)) : items;
+    if(gefilterd.length) groepen.push([cat, gefilterd]);
+  });
+  if(!groepen.length){
+    return `<div class="empty">Niets gevonden voor "${foodZoek}" — voeg het toe als eigen product.</div>`;
+  }
+  return groepen.map(([cat, items])=>`
+    <div style="margin-bottom:6px;">
+      <div style="font-size:12.5px;font-weight:700;color:var(--text3);margin:10px 0 6px 0;">${cat}</div>
+      <div class="food-grid">
+        ${items.map(f=>`
+          <button class="food-item" onclick='addFoodQuick(${JSON.stringify(f)})'>
+            <span class="fn">${f.naam}</span>
+            <span class="fk">${f.kcal} kcal &middot; E${f.eiwit} K${f.kool} V${f.vet}</span>
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function renderMealGroups(log, datum){
+  if(!log.length) return `<div class="card"><div class="empty">Nog niets gelogd op deze dag.</div></div>`;
+  const cards = MOMENTEN.map(m=>{
+    const items = log.map((f,i)=>({...f, idx:i})).filter(f=>(f.moment||'Snack')===m);
+    if(!items.length) return '';
+    const sub = items.reduce((s,f)=>s+f.kcal,0);
+    return `
+      <div class="card">
+        <div class="row" style="margin-bottom:4px;"><h3 style="margin:0;">${m}</h3><span style="font-size:12.5px;color:var(--text2);">${sub} kcal</span></div>
+        ${items.map(f=>`
+          <div class="log-row">
+            <div><div class="fn">${f.naam}</div><div class="fk">${f.kcal} kcal &middot; E${f.eiwit||0} K${f.kool||0} V${f.vet||0}</div></div>
+            <button class="del-btn" onclick="deleteFoodEntry('${datum}', ${f.idx})">&#10005;</button>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+  return cards || `<div class="card"><div class="empty">Nog niets gelogd op deze dag.</div></div>`;
+}
+function voedingShiftDag(delta){
+  const d = new Date(voedingDatum+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  const nieuw = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  if(nieuw > todayStr()) return;
+  voedingDatum = nieuw;
+  render();
+}
+function addFoodQuick(food){
+  const u = activeUser();
+  if(!u.foodLog[voedingDatum]) u.foodLog[voedingDatum] = [];
+  u.foodLog[voedingDatum].push({
+    naam:food.naam, kcal:food.kcal, eiwit:food.eiwit||0, kool:food.kool||0, vet:food.vet||0,
+    tijd:new Date().toISOString(), moment:voedingMoment
+  });
+  save();
+  render();
+  showToast(`&#10003; ${food.naam} &middot; ${food.kcal} kcal bij ${voedingMoment}`);
+}
+function deleteFoodEntry(datum, idx){
+  activeUser().foodLog[datum].splice(idx,1);
+  save();
+  render();
+}
+function openCustomFood(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal">
+      <h3>Eigen product</h3>
+      <label>Naam</label>
+      <input id="cf_naam" placeholder="Bijv. Bruine boterham met ei">
+      <label>Calorieën (kcal)</label>
+      <input id="cf_kcal" type="number" min="0">
+      <label>Eiwit (gram, optioneel)</label>
+      <input id="cf_eiwit" type="number" min="0" value="0">
+      <label>Koolhydraten (gram, optioneel)</label>
+      <input id="cf_kool" type="number" min="0" value="0">
+      <label>Vet (gram, optioneel)</label>
+      <input id="cf_vet" type="number" min="0" value="0">
+      <div class="modal-actions">
+        <button class="btn secondary" style="flex:1" onclick="closeModal()">Annuleren</button>
+        <button class="btn" style="flex:1" onclick="saveCustomFood()">Toevoegen</button>
+      </div>
+    </div>`;
+  document.getElementById('app').appendChild(bg);
+}
+function saveCustomFood(){
+  const naam = document.getElementById('cf_naam').value.trim();
+  const kcal = parseFloat(document.getElementById('cf_kcal').value);
+  const eiwit = parseFloat(document.getElementById('cf_eiwit').value) || 0;
+  const kool = parseFloat(document.getElementById('cf_kool').value) || 0;
+  const vet = parseFloat(document.getElementById('cf_vet').value) || 0;
+  if(!naam || !kcal){ alert('Vul een naam en calorieën in.'); return; }
+  addFoodQuick({naam, kcal, eiwit, kool, vet});
+  closeModal();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VOORTGANG — persoonlijke stats van het actieve profiel, maar de
+   grafiek toont alle profielen tegelijk (elk als eigen kleurlijn)
+   zodat het gezin elkaars voortgang kan vergelijken.
+══════════════════════════════════════════════════════════════ */
+function renderVoortgang(){
+  const u = activeUser();
+  const p = u.profile;
+  const weights = u.weights;
+  const first = weights[0], last = weights[weights.length-1];
+  const sindsStart = (first && last && weights.length>1) ? (last.gewicht-first.gewicht) : 0;
+
+  let weekGem = 0;
+  if(weights.length>1){
+    const dagen = (new Date(last.datum)-new Date(first.datum))/86400000;
+    weekGem = dagen>0 ? (sindsStart/dagen)*7 : 0;
+  }
+
+  const statBlock = `
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-tile"><div class="v">${last?last.gewicht:'—'} kg</div><div class="l">Huidig</div></div>
+      <div class="stat-tile"><div class="v">${weights.length>1 ? (sindsStart<=0?'':'+')+sindsStart.toFixed(1) : '—'} kg</div><div class="l">Sinds start</div></div>
+      <div class="stat-tile"><div class="v">${p.streefgewicht ?? '—'} kg</div><div class="l">Streefgewicht</div></div>
+      <div class="stat-tile"><div class="v">${weights.length>1 ? weekGem.toFixed(2) : '—'} kg</div><div class="l">Gem. per week</div></div>
+    </div>`;
+
+  const addForm = `
+    <div class="card">
+      <h3>Gewicht toevoegen</h3>
+      <label>Datum</label>
+      <input id="wt_datum" type="date" value="${todayStr()}" max="${todayStr()}">
+      <label>Gewicht (kg)</label>
+      <input id="wt_gewicht" type="number" step="0.1" placeholder="Bijv. 76.5">
+      <button class="btn block" style="margin-top:12px;" onclick="addWeight()">Toevoegen</button>
+    </div>`;
+
+  const toggle = `
+    <div class="tab-switch">
+      <button class="${voortgangView==='grafiek'?'active':''}" onclick="setVoortgangView('grafiek')">Grafiek</button>
+      <button class="${voortgangView==='tabel'?'active':''}" onclick="setVoortgangView('tabel')">Tabel</button>
+    </div>`;
+
+  const content = voortgangView==='grafiek' ? renderWeightChart() : renderWeightTable();
+  const titel = Object.keys(state.users).length>1 ? 'Gewichtsverloop — iedereen' : 'Gewichtsverloop';
+
+  return `${statBlock}${addForm}<h2 class="section-title">${titel}</h2>${toggle}${content}
+    <h2 class="section-title">Kalender — voeding &amp; trainingen</h2>
+    ${renderKalender()}`;
+}
+function setVoortgangView(v){ voortgangView=v; render(); }
+
+function addWeight(){
+  const u = activeUser();
+  const datum = document.getElementById('wt_datum').value;
+  const gewicht = parseFloat(document.getElementById('wt_gewicht').value);
+  if(!datum || !gewicht){ alert('Vul een datum en gewicht in.'); return; }
+  const idx = u.weights.findIndex(w=>w.datum===datum);
+  if(idx>=0) u.weights[idx].gewicht = gewicht;
+  else u.weights.push({datum, gewicht});
+  u.weights.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save();
+  render();
+  showToast(`&#10003; Gewicht opgeslagen: ${gewicht} kg`);
+}
+
+function renderWeightChart(){
+  const activeU = activeUser();
+  const userList = Object.values(state.users).filter(u=>u.weights.length>0);
+  const genoegData = userList.some(u=>u.weights.length>1);
+  if(!userList.length || !genoegData){
+    return `<div class="card"><div class="empty">Voeg minstens 2 metingen toe om een grafiek te zien.</div></div>`;
+  }
+  const W=420, H=200, padL=38, padR=14, padT=16, padB=30;
+  const allVals = userList.flatMap(u=>u.weights.map(w=>w.gewicht));
+  const streef = activeU.profile.streefgewicht;
+  if(streef) allVals.push(streef);
+  let min = Math.min(...allVals), max = Math.max(...allVals);
+  const span = (max-min) || 1;
+  min -= span*0.1; max += span*0.1;
+
+  const allDates = userList.flatMap(u=>u.weights.map(w=>new Date(w.datum).getTime()));
+  const dMin = Math.min(...allDates), dMax = Math.max(...allDates);
+  const dSpan = (dMax-dMin) || 1;
+
+  const x = t => padL + ((t-dMin)/dSpan) * (W-padL-padR);
+  const y = v => H-padB - ((v-min)/(max-min)) * (H-padT-padB);
+
+  const gridY = [0,0.5,1].map(f=>{
+    const val = min + f*(max-min);
+    return `<line x1="${padL}" y1="${y(val).toFixed(1)}" x2="${W-padR}" y2="${y(val).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>
+            <text x="${padL-6}" y="${(y(val)+3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text3)">${val.toFixed(1)}</text>`;
+  }).join('');
+
+  const streefLine = streef ? `
+    <line x1="${padL}" y1="${y(streef).toFixed(1)}" x2="${W-padR}" y2="${y(streef).toFixed(1)}" stroke="var(--text3)" stroke-width="1.5" stroke-dasharray="4,4"/>
+    <text x="${W-padR}" y="${y(streef)-6}" text-anchor="end" font-size="10" fill="var(--text3)">Doel ${activeU.naam}: ${streef} kg</text>
+  ` : '';
+
+  let series = '';
+  userList.forEach((u, idx)=>{
+    if(u.weights.length<2) return;
+    const color = SERIES_COLORS[idx % SERIES_COLORS.length];
+    const pts = u.weights.map(w=>({x:x(new Date(w.datum).getTime()), y:y(w.gewicht), w}));
+    const path = pts.map((pt,i)=>(i===0?'M':'L')+pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ');
+    const dots = pts.map(pt=>`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="4.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"><title>${u.naam} — ${fmtDate(pt.w.datum)}: ${pt.w.gewicht} kg</title></circle>`).join('');
+    series += `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}`;
+  });
+
+  const toIso = ms => new Date(ms).toISOString().slice(0,10);
+  const firstLbl = fmtDateShort(toIso(dMin));
+  const lastLbl = fmtDateShort(toIso(dMax));
+
+  const legend = userList.length>1 ? `
+    <div class="legend" style="margin-top:8px;">
+      ${userList.map((u,idx)=>`<span class="li"><span class="dot" style="background:${SERIES_COLORS[idx%SERIES_COLORS.length]};"></span>${u.naam}</span>`).join('')}
+    </div>` : '';
+
+  return `
+    <div class="card">
+      <div class="chart-wrap">
+        <svg width="100%" viewBox="0 0 ${W} ${H}" style="min-width:${W}px;">
+          ${gridY}
+          ${streefLine}
+          ${series}
+          <text x="${padL}" y="${H-8}" font-size="10.5" fill="var(--text3)">${firstLbl}</text>
+          <text x="${W-padR}" y="${H-8}" text-anchor="end" font-size="10.5" fill="var(--text3)">${lastLbl}</text>
+        </svg>
+      </div>
+      ${legend}
+      <div style="font-size:11.5px;color:var(--text3);margin-top:6px;">Beweeg over een punt voor naam, datum en gewicht.</div>
+    </div>`;
+}
+function renderWeightTable(){
+  const weights = [...activeUser().weights].reverse();
+  if(!weights.length) return `<div class="card"><div class="empty">Nog geen metingen.</div></div>`;
+  return `
+    <div class="card">
+      <table class="simple">
+        <tr><th>Datum</th><th>Gewicht</th></tr>
+        ${weights.map(w=>`<tr><td>${fmtDate(w.datum)}</td><td>${w.gewicht} kg</td></tr>`).join('')}
+      </table>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   KALENDER — dagoverzicht van voeding (binnen/boven doel) en
+   trainingen (dot). Tik op een dag voor de details.
+══════════════════════════════════════════════════════════════ */
+function dagVoedingStatus(u, targets, ds){
+  const log = u.foodLog[ds] || [];
+  const kcal = log.reduce((s,i)=>s+i.kcal,0);
+  if(kcal <= 0) return {cls:'', kcal:0};
+  if(!targets) return {cls:'f-good', kcal};
+  const budget = targets.kcalDoel + verbrandOpDag(u, ds);
+  if(kcal <= budget) return {cls:'f-good', kcal};
+  if(kcal <= budget*1.1) return {cls:'f-warn', kcal};
+  return {cls:'f-over', kcal};
+}
+
+function renderKalender(){
+  const u = activeUser();
+  const targets = calcTargets(u);
+  const now = new Date();
+  const base = new Date(now.getFullYear(), now.getMonth()+calMaandOffset, 1);
+  const y = base.getFullYear(), m = base.getMonth();
+  const maandLabel = base.toLocaleDateString('nl-NL', {month:'long', year:'numeric'});
+  const dagenInMaand = new Date(y, m+1, 0).getDate();
+  const startCol = (new Date(y, m, 1).getDay()+6)%7; // maandag = kolom 0
+  const today = todayStr();
+  const workoutDagen = new Set(u.workout.historie.map(h=>h.datum));
+
+  const wds = ['Ma','Di','Wo','Do','Vr','Za','Zo'].map(d=>`<div class="cal-wd">${d}</div>`).join('');
+  let cells = '';
+  for(let i=0;i<startCol;i++) cells += '<div></div>';
+  for(let d=1; d<=dagenInMaand; d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isFuture = ds > today;
+    const st = dagVoedingStatus(u, targets, ds);
+    const wo = workoutDagen.has(ds);
+    cells += `
+      <button class="cal-day ${st.cls} ${isFuture?'future':''} ${ds===today?'today':''} ${ds===calSelectedDag?'sel':''}"
+        ${isFuture?'disabled':''} onclick="kalSelect('${ds}')" aria-label="${fmtDate(ds)}">
+        <span class="cd-num">${d}</span>
+        ${wo?'<span class="cd-dot"></span>':''}
+      </button>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="cal-head">
+        <button onclick="kalShift(-1)" aria-label="Vorige maand">&#8592;</button>
+        <span class="cal-maand">${maandLabel}</span>
+        <button onclick="kalShift(1)" ${calMaandOffset>=0?'disabled':''} aria-label="Volgende maand">&#8594;</button>
+      </div>
+      <div class="cal-grid">${wds}${cells}</div>
+      <div class="cal-legend">
+        <span class="li"><span class="sw" style="background:var(--good-bg);"></span>Binnen caloriedoel</span>
+        <span class="li"><span class="sw" style="background:var(--warning-bg);"></span>Iets erboven (&le;10%)</span>
+        <span class="li"><span class="sw" style="background:var(--critical-bg);"></span>Boven doel</span>
+        <span class="li"><span class="cd-dot"></span>Training gedaan</span>
+      </div>
+    </div>
+    ${renderKalDetail()}`;
+}
+
+function renderKalDetail(){
+  const ds = calSelectedDag;
+  if(!ds) return `<div class="empty" style="padding:8px;">Tik op een dag voor de details.</div>`;
+  const u = activeUser();
+  const targets = calcTargets(u);
+  const log = u.foodLog[ds] || [];
+  const kcal = log.reduce((s,i)=>s+i.kcal,0);
+  const eiwit = log.reduce((s,i)=>s+(i.eiwit||0),0);
+  const kool = log.reduce((s,i)=>s+(i.kool||0),0);
+  const vet = log.reduce((s,i)=>s+(i.vet||0),0);
+  const workouts = u.workout.historie.filter(h=>h.datum===ds);
+  const cardio = (u.activityLog && u.activityLog[ds]) || [];
+  const verbrand = cardio.reduce((s,a)=>s+(a.kcal||0),0);
+  const program = PROGRAMS[u.profile.programma];
+  const budget = targets ? targets.kcalDoel + verbrand : null;
+
+  const voedingBlok = log.length ? `
+    <div style="margin-bottom:${(workouts.length||cardio.length)?'14px':'0'};">
+      <div class="row" style="margin-bottom:6px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text2);">Voeding</span>
+        <span style="font-size:12.5px;color:var(--text3);font-variant-numeric:tabular-nums;">${kcal}${budget?' / '+budget:''} kcal &middot; E${eiwit} K${kool} V${vet}</span>
+      </div>
+      ${log.map(f=>`
+        <div class="log-row">
+          <div><div class="fn">${f.naam}</div><div class="fk">${f.moment||''} &middot; ${f.kcal} kcal</div></div>
+        </div>`).join('')}
+    </div>` : `<div class="empty" style="padding:6px 0 ${(workouts.length||cardio.length)?'10px':'0'} 0;">Geen voeding gelogd op deze dag.</div>`;
+
+  const workoutBlok = workouts.length ? `
+    <div style="margin-bottom:${cardio.length?'14px':'0'};">
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px;">Training</div>
+      ${workouts.map(h=>{
+        const naamW = (program.workouts[h.type] && program.workouts[h.type].naam) || h.type;
+        const vol = histVolume(h);
+        const cardioTxt = h.cardio && h.cardio.minuten ? ` &middot; ${h.cardio.minuten} min ${h.cardio.type.toLowerCase()}` : '';
+        return `<div class="log-row"><div><div class="fn">${naamW}</div><div class="fk">${vol?Math.round(vol)+' kg volume':'Voltooid'}${cardioTxt}</div></div></div>`;
+      }).join('')}
+    </div>` : '';
+
+  const cardioBlok = cardio.length ? `
+    <div>
+      <div class="row" style="margin-bottom:6px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text2);">Beweging</span>
+        <span class="badge good">&#128293; ${verbrand} kcal verbrand</span>
+      </div>
+      ${cardio.map(a=>`
+        <div class="log-row">
+          <div><div class="fn">${cardioIcon(a.type,'inline')} ${a.type} &middot; ${TEMPO_LABELS[a.tempo]||''}</div><div class="fk">${a.minuten} min${a.afstand?` &middot; ${a.afstand} km`:''}</div></div>
+          <span class="fk" style="font-weight:700;color:var(--good);">-${a.kcal} kcal</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  return `
+    <div class="card">
+      <h3>${fmtDate(ds)}</h3>
+      ${voedingBlok}
+      ${workoutBlok}
+      ${cardioBlok}
+    </div>`;
+}
+
+function kalShift(delta){
+  if(calMaandOffset + delta > 0) return;
+  calMaandOffset += delta;
+  calSelectedDag = null;
+  render();
+}
+function kalSelect(ds){
+  calSelectedDag = (calSelectedDag === ds) ? null : ds;
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WORKOUTS — Strong-stijl: per-set kg/herhalingen loggen met
+   referentie naar de vorige keer, plus rusttimer.
+══════════════════════════════════════════════════════════════ */
+let currentSets = {};    // {exId: [{kg, reps, done}, ...]} — huidige sessie
+let cardioForm = {type:'Wandelen', tempo:'gemiddeld', minuten:'', afstand:''};
+let sessionExercises = null; // oefening-ids van de huidige sessie
+let sessionKey = '';         // userId|workout — om te weten wanneer opnieuw te initialiseren
+let libGroep = 'Alle';       // actieve spiergroep-filter in de bibliotheek
+
+function ensureSession(u, volgende){
+  const key = state.activeUserId + '|' + volgende;
+  if(sessionKey !== key){
+    sessionKey = key;
+    const program = PROGRAMS[u.profile.programma];
+    sessionExercises = [...program.workouts[volgende].oefeningen];
+    currentSets = {};
+  }
+}
+
+function getPreviousSet(u, exId, setIdx){
+  const historie = u.workout.historie;
+  for(let i=historie.length-1; i>=0; i--){
+    const h = historie[i];
+    if(h.sets && !Array.isArray(h.sets) && h.sets[exId] && h.sets[exId][setIdx]) return h.sets[exId][setIdx];
+  }
+  return null;
+}
+
+function histVolume(h){
+  const rows = Array.isArray(h.sets) ? h.sets.flat() : Object.values(h.sets||{}).flat();
+  return rows.reduce((s,st)=>s+((st.kg||0)*(st.reps||0)),0);
+}
+
+function renderExerciseCard(u, exId){
+  const ex = EXERCISE_DB[exId];
+  if(!ex) return '';
+  const rows = [];
+  for(let s=0; s<ex.setCount; s++){
+    const cur = (currentSets[exId] && currentSets[exId][s]) || {};
+    const prev = getPreviousSet(u, exId, s);
+    const prevTxt = prev ? (ex.bodyweight ? `${prev.reps}${ex.eenheid==='sec'?'s':''}` : `${prev.kg}kg &times; ${prev.reps}`) : '—';
+    const done = !!cur.done;
+    const kgInput = ex.bodyweight ? '' : `<input class="set-input" type="number" inputmode="decimal" placeholder="${prev?prev.kg:'-'}"
+        value="${cur.kg!==undefined?cur.kg:''}" onchange="updateSet('${exId}',${s},'kg',this.value)">`;
+    rows.push(`
+      <div class="set-row ${ex.bodyweight?'w3':'w4'}">
+        <span class="set-num">${s+1}</span>
+        <span class="set-prev">${prevTxt}</span>
+        ${kgInput}
+        <input class="set-input" type="number" inputmode="numeric" placeholder="${prev?prev.reps:'-'}"
+          value="${cur.reps!==undefined?cur.reps:''}" onchange="updateSet('${exId}',${s},'reps',this.value)">
+        <button class="check ${done?'on':''}" onclick="toggleSetDone('${exId}',${s},${ex.rustSec})">${done?'&#10003;':''}</button>
+      </div>`);
+  }
+  return `
+    <div class="exercise-card">
+      <div class="ex-top">
+        <div>
+          <h4>${ex.naam}</h4>
+          <div class="meta">${ex.groep} &middot; rust ${ex.rustSec} sec</div>
+        </div>
+        <button class="del-btn" onclick="removeSessionExercise('${exId}')" aria-label="Oefening verwijderen">&#10005;</button>
+      </div>
+      <details class="ex-info"><summary>Hoe doe ik dit?</summary><p>${ex.uitleg}</p></details>
+      <div class="set-head ${ex.bodyweight?'w3':'w4'}">
+        <span>Set</span><span>Vorige</span>${ex.bodyweight?'':'<span>Kg</span>'}<span>${ex.eenheid==='sec'?'Sec':'Herh'}</span><span></span>
+      </div>
+      ${rows.join('')}
+    </div>`;
+}
+
+function renderLibrary(){
+  const groepen = ['Alle', ...SPIERGROEPEN];
+  const chips = groepen.map(g=>`<button class="lib-chip ${libGroep===g?'active':''}" onclick="setLibGroep('${g}')">${g}</button>`).join('');
+  const items = Object.entries(EXERCISE_DB)
+    .filter(([id,ex]) => libGroep==='Alle' || ex.groep===libGroep)
+    .map(([id,ex])=>{
+      const on = sessionExercises.includes(id);
+      return `
+        <div class="lib-row ${on?'selected':''}">
+          <div>
+            <div class="ln">${ex.naam}</div>
+            <div class="lg">${ex.groep}${ex.bodyweight?' &middot; lichaamsgewicht':''}</div>
+          </div>
+          <button class="check ${on?'on':''}" onclick="toggleLibExercise('${id}')" aria-label="${on?'Verwijderen uit':'Toevoegen aan'} training">${on?'&#10003;':'&#43;'}</button>
+        </div>`;
+    }).join('');
+  return `
+    <div class="lib-chips">${chips}</div>
+    <div class="lib-list">${items || '<div class="empty">Geen oefeningen in deze groep.</div>'}</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px;">Vink oefeningen aan om ze aan je training van vandaag toe te voegen — ze verschijnen hierboven met een invulschema.</div>`;
+}
+
+function renderWorkouts(){
+  const u = activeUser();
+  const program = PROGRAMS[u.profile.programma];
+  const volgende = u.workout.volgende;
+  const w = program.workouts[volgende];
+  ensureSession(u, volgende);
+  const dezeWeek = u.workout.historie.filter(h=>{
+    const diff = (new Date()-new Date(h.datum))/86400000;
+    return diff < 7;
+  }).length;
+  const totaal = u.workout.historie.length;
+
+  const exCards = sessionExercises.map(exId=>renderExerciseCard(u, exId)).join('');
+
+  const alleGedaan = sessionExercises.length>0 && sessionExercises.every(exId=>{
+    const ex = EXERCISE_DB[exId]; if(!ex) return true;
+    for(let s=0;s<ex.setCount;s++){ if(!(currentSets[exId] && currentSets[exId][s] && currentSets[exId][s].done)) return false; }
+    return true;
+  });
+
+  const recent = [...u.workout.historie].reverse().slice(0,5).map(h=>{
+    const vol = histVolume(h);
+    const naamWorkout = program.workouts[h.type] ? program.workouts[h.type].naam : h.type;
+    const cardioTxt = h.cardio && h.cardio.minuten ? ` &middot; ${h.cardio.minuten} min cardio` : '';
+    return `<div class="log-row"><div><div class="fn">${naamWorkout}</div><div class="fk">${fmtDate(h.datum)}</div></div><div class="fk">${vol?Math.round(vol)+' kg volume':''}${cardioTxt}</div></div>`;
+  }).join('');
+
+  return `
+    <div class="card" style="background:var(--brand-light);border-color:var(--brand-light);">
+      <div class="row">
+        <div><div style="font-size:11px;color:var(--brand-dark);font-weight:700;letter-spacing:.8px;">DEZE TRAINING</div>
+             <div style="font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-.2px;margin-top:2px;">${w.naam}</div></div>
+        <span class="badge good">${dezeWeek}/${program.perWeek} deze week</span>
+      </div>
+    </div>
+    <details class="tips">
+      <summary>&#9200; Warming-up, cooling-down & tips</summary>
+      <ul>
+        <li>Warm 5-10 minuten rustig op, bijvoorbeeld fietsen of lopend bandje.</li>
+        <li>Voer elke oefening met een rustig tempo en goede houding uit — vorm gaat voor gewicht.</li>
+        <li>Vul bij elke set het gewicht (kg) en aantal herhalingen in en vink af als de set klaar is — de rusttimer start dan automatisch.</li>
+        <li>Sluit af met 5 minuten rustig uitrekken.</li>
+        <li>Train ${program.perWeek}x per week met minstens 1 rustdag ertussen.</li>
+      </ul>
+    </details>
+    <h2 class="section-title">Jouw training vandaag</h2>
+    ${exCards || '<div class="card"><div class="empty">Nog geen oefeningen gekozen — vink er hieronder een paar aan.</div></div>'}
+    <button class="btn block" onclick="completeWorkout()">Training voltooid &#10003;</button>
+    ${!alleGedaan?'<div class="meta" style="text-align:center;margin-top:6px;color:var(--text3);font-size:12px;">Nog niet alle sets afgevinkt</div>':''}
+    <h2 class="section-title">Alle oefeningen</h2>
+    ${renderLibrary()}
+    <h2 class="section-title">Trainingsgeschiedenis</h2>
+    <div class="card">
+      <div class="row" style="margin-bottom:${recent?'8px':'0'};"><span>Totaal voltooide trainingen</span><strong>${totaal}</strong></div>
+      ${recent}
+    </div>
+  `;
+}
+function setLibGroep(g){ libGroep = g; render(); }
+function toggleLibExercise(exId){
+  const idx = sessionExercises.indexOf(exId);
+  if(idx >= 0){ sessionExercises.splice(idx,1); delete currentSets[exId]; }
+  else sessionExercises.push(exId);
+  render();
+}
+function removeSessionExercise(exId){
+  const idx = sessionExercises.indexOf(exId);
+  if(idx >= 0){ sessionExercises.splice(idx,1); delete currentSets[exId]; }
+  render();
+}
+function updateSet(exId, setIdx, field, value){
+  if(!currentSets[exId]) currentSets[exId] = [];
+  if(!currentSets[exId][setIdx]) currentSets[exId][setIdx] = {};
+  currentSets[exId][setIdx][field] = value;
+}
+function toggleSetDone(exId, setIdx, rustSec){
+  if(!currentSets[exId]) currentSets[exId] = [];
+  if(!currentSets[exId][setIdx]) currentSets[exId][setIdx] = {};
+  const nowDone = !currentSets[exId][setIdx].done;
+  currentSets[exId][setIdx].done = nowDone;
+  if(nowDone) startRest(rustSec);
+  render();
+}
+function completeWorkout(){
+  const u = activeUser();
+  const program = PROGRAMS[u.profile.programma];
+  const volgende = u.workout.volgende;
+  const setsData = {};
+  sessionExercises.forEach(exId=>{
+    const ex = EXERCISE_DB[exId]; if(!ex) return;
+    const rows = [];
+    for(let s=0; s<ex.setCount; s++){
+      const cur = (currentSets[exId] && currentSets[exId][s]) || {};
+      const prev = getPreviousSet(u, exId, s);
+      const kg = cur.kg!==undefined && cur.kg!=='' ? parseFloat(cur.kg) : (prev ? prev.kg : 0);
+      const reps = cur.reps!==undefined && cur.reps!=='' ? parseFloat(cur.reps) : (prev ? prev.reps : 0);
+      rows.push({kg: kg||0, reps: reps||0});
+    }
+    setsData[exId] = rows;
+  });
+  u.workout.historie.push({datum: todayStr(), type: volgende, sets: setsData});
+  const schema = program.schema;
+  const curIdx = schema.indexOf(volgende);
+  u.workout.volgende = schema[(curIdx+1) % schema.length];
+  currentSets = {};
+  sessionKey = '';
+  stopRest();
+  save();
+  render();
+  showToast('&#128170; Training opgeslagen — goed bezig!');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARDIO — eigen tabblad: kies activiteit, tempo en duur; de app
+   rekent de verbrande kcal uit (MET × gewicht × uren) en telt die
+   mee in het dagelijkse caloriebudget.
+══════════════════════════════════════════════════════════════ */
+function renderCardio(){
+  const u = activeUser();
+  const program = PROGRAMS[u.profile.programma];
+  // weekoverzicht (afgelopen 7 dagen)
+  const now = new Date();
+  let weekMin = 0, weekKcal = 0;
+  Object.entries(u.activityLog || {}).forEach(([ds, items])=>{
+    const diff = (now - new Date(ds+'T00:00:00')) / 86400000;
+    if(diff >= 0 && diff < 7) items.forEach(a=>{ weekMin += a.minuten||0; weekKcal += a.kcal||0; });
+  });
+  const whoPct = Math.min(100, Math.round(weekMin / 150 * 100));
+  const weekBlock = `
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-tile"><div class="v">${Math.round(weekMin)} min</div><div class="l">Bewogen deze week</div></div>
+      <div class="stat-tile"><div class="v">${Math.round(weekKcal)}</div><div class="l">Kcal verbrand deze week</div></div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:6px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text2);">WHO-beweegrichtlijn</span>
+        <span style="font-size:12.5px;color:var(--text3);font-variant-numeric:tabular-nums;">${Math.round(weekMin)} / 150 min per week</span>
+      </div>
+      <div class="progress-outer"><div class="progress-inner" style="width:${whoPct}%;background:${whoPct>=100?'var(--good)':'var(--brand)'};"></div></div>
+      ${whoPct>=100 ? '<div style="margin-top:8px;"><span class="badge good">&#10003; Richtlijn gehaald deze week!</span></div>' : ''}
+    </div>`;
+  return `${weekBlock}<h2 class="section-title">Cardio loggen</h2>${renderCardioCard(u, program)}`;
+}
+
+function renderCardioCard(u, program){
+  const gewicht = huidigGewicht(u) || 70;
+  const vandaag = (u.activityLog[todayStr()] || []);
+  const totaalVerbrand = vandaag.reduce((s,a)=>s+(a.kcal||0),0);
+
+  const minutenNu = parseFloat(cardioForm.minuten) || 0;
+  const preview = minutenNu > 0 ? cardioKcal(cardioForm.type, cardioForm.tempo, minutenNu, gewicht) : 0;
+
+  const hint = program.cardio
+    ? `<p style="font-size:13px;color:var(--text2);margin:0 0 10px 0;">Voor jouw programma: doe na de krachttraining 20-30 minuten cardio op een matig tot stevig tempo.</p>`
+    : `<p style="font-size:13px;color:var(--text2);margin:0 0 10px 0;">Log hier extra beweging (hardlopen, fietsen, stairmaster...) — de verbrande calorie&euml;n tellen mee in je dagbudget.</p>`;
+
+  const lijst = vandaag.length ? `
+    <div style="margin-top:14px;">
+      <div class="row" style="margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text2);">Vandaag</span>
+        <span class="badge good">&#128293; ${totaalVerbrand} kcal verbrand</span>
+      </div>
+      ${vandaag.map((a,i)=>`
+        <div class="log-row">
+          <div>
+            <div class="fn">${cardioIcon(a.type,'inline')} ${a.type} &middot; ${TEMPO_LABELS[a.tempo]||''}</div>
+            <div class="fk">${a.minuten} min${a.afstand?` &middot; ${a.afstand} km`:''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span class="fk" style="font-weight:700;color:var(--good);">-${a.kcal} kcal</span>
+            <button class="del-btn" onclick="deleteCardio(${i})">&#10005;</button>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+  return `
+    <div class="card">
+      ${hint}
+      <label>Activiteit</label>
+      <div class="cardio-grid">
+        ${CARDIO_TYPES.map(t=>`
+          <button class="cardio-tile ${cardioForm.type===t?'active':''}" onclick="kiesCardio('${t}')">
+            ${cardioIcon(t)}
+            <span class="cn">${t}</span>
+          </button>`).join('')}
+      </div>
+      <label>Tempo</label>
+      <select onchange="cardioForm.tempo=this.value; render();">
+        ${Object.entries(TEMPO_LABELS).map(([k,v])=>`<option value="${k}" ${cardioForm.tempo===k?'selected':''}>${v}</option>`).join('')}
+      </select>
+      <label>Duur (minuten)</label>
+      <input type="number" min="1" value="${cardioForm.minuten}" placeholder="Bijv. 30"
+        onchange="cardioForm.minuten=this.value; render();">
+      <label>Afstand (km, optioneel)</label>
+      <input type="number" min="0" step="0.1" value="${cardioForm.afstand}" placeholder="Bijv. 5"
+        onchange="cardioForm.afstand=this.value">
+      ${preview>0 ? `<div style="margin-top:10px;"><span class="badge good">&asymp; ${preview} kcal bij jouw gewicht (${gewicht} kg)</span></div>` : ''}
+      <button class="btn block" style="margin-top:12px;" onclick="addCardio()">Cardio toevoegen</button>
+      ${lijst}
+    </div>`;
+}
+function kiesCardio(type){
+  cardioForm.type = type;
+  render();
+}
+function addCardio(){
+  const u = activeUser();
+  const minuten = parseFloat(cardioForm.minuten);
+  if(!minuten || minuten <= 0){ alert('Vul een duur in minuten in.'); return; }
+  const afstand = parseFloat(cardioForm.afstand) || 0;
+  const kcal = cardioKcal(cardioForm.type, cardioForm.tempo, minuten, huidigGewicht(u) || 70);
+  const ds = todayStr();
+  if(!u.activityLog[ds]) u.activityLog[ds] = [];
+  u.activityLog[ds].push({ type:cardioForm.type, tempo:cardioForm.tempo, minuten, afstand, kcal, tijd:new Date().toISOString() });
+  cardioForm = {type:cardioForm.type, tempo:cardioForm.tempo, minuten:'', afstand:''};
+  save();
+  render();
+  showToast(`&#128293; ${cardioForm.type} gelogd: ${kcal} kcal verbrand`);
+}
+function deleteCardio(idx){
+  const u = activeUser();
+  const ds = todayStr();
+  if(u.activityLog[ds]) u.activityLog[ds].splice(idx,1);
+  save();
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RUSTTIMER
+══════════════════════════════════════════════════════════════ */
+let restState = null; // {remaining, total, timerId}
+function startRest(seconds){
+  if(restState && restState.timerId) clearInterval(restState.timerId);
+  restState = {remaining: seconds, total: seconds, timerId: null};
+  updateRestBanner();
+  restState.timerId = setInterval(()=>{
+    restState.remaining--;
+    if(restState.remaining<=0){ clearInterval(restState.timerId); restState=null; }
+    updateRestBanner();
+  },1000);
+}
+function plus30Rest(){
+  if(!restState) return;
+  restState.remaining += 30;
+  restState.total = Math.max(restState.total, restState.remaining);
+  updateRestBanner();
+}
+function stopRest(){
+  if(restState && restState.timerId) clearInterval(restState.timerId);
+  restState = null;
+  updateRestBanner();
+}
+function updateRestBanner(){
+  const el = document.getElementById('restBanner');
+  if(!el) return;
+  if(!restState){ el.style.display='none'; return; }
+  el.style.display='flex';
+  const txt = el.querySelector('.rt-txt');
+  if(txt) txt.textContent = `Rust: ${restState.remaining}s`;
+  const bar = el.querySelector('.rest-progress');
+  if(bar) bar.style.width = Math.max(0, Math.round(restState.remaining / restState.total * 100)) + '%';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   START
+══════════════════════════════════════════════════════════════ */
+setTab('dashboard');
+
+// Service worker voor offline gebruik (werkt alleen via HTTPS of localhost)
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
