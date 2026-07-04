@@ -540,32 +540,31 @@
 
 <script>
 /* ══════════════════════════════════════════════════════════════
-   THEMA — licht/donker/systeem, per apparaat (niet per profiel)
+   THEMA — licht/donker, per apparaat (niet per profiel). Bij de
+   eerste keer volgt het de systeeminstelling; daarna gewoon wisselen.
 ══════════════════════════════════════════════════════════════ */
-const THEME_KEY = 'fitpad_theme'; // 'system' | 'light' | 'dark'
+const THEME_KEY = 'fitpad_theme'; // 'light' | 'dark'
 const THEME_ICONS = {
-  system: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/>',
   light: '<circle cx="12" cy="12" r="4"/><path d="M12 3v1.5"/><path d="M12 19.5v1.5"/><path d="M3 12h1.5"/><path d="M19.5 12h1.5"/><path d="M5.6 5.6l1 1"/><path d="M17.4 17.4l1 1"/><path d="M5.6 18.4l1 -1"/><path d="M17.4 6.6l1 -1"/>',
   dark: '<path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1 -9 -9z"/>'
 };
-function getTheme(){ return localStorage.getItem(THEME_KEY) || 'system'; }
-function applyTheme(mode){
-  const root = document.documentElement;
-  if(mode==='dark' || mode==='light') root.setAttribute('data-theme', mode);
-  else root.removeAttribute('data-theme');
-  const metaTheme = document.querySelector('meta[name="theme-color"]');
+function effectiefThema(){
+  const stored = localStorage.getItem(THEME_KEY);
+  if(stored) return stored;
   const stelselDonker = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const effectiefDonker = mode==='dark' || (mode==='system' && stelselDonker);
-  if(metaTheme) metaTheme.setAttribute('content', effectiefDonker ? '#234e37' : '#1f5436');
+  return stelselDonker ? 'dark' : 'light';
+}
+function applyTheme(){
+  const mode = effectiefThema();
+  document.documentElement.setAttribute('data-theme', mode);
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme) metaTheme.setAttribute('content', mode==='dark' ? '#234e37' : '#1f5436');
   const icon = document.getElementById('themeIcon');
-  if(icon) icon.innerHTML = THEME_ICONS[mode] || THEME_ICONS.system;
+  if(icon) icon.innerHTML = THEME_ICONS[mode];
 }
 function cycleTheme(){
-  const order = ['system','light','dark'];
-  const next = order[(order.indexOf(getTheme())+1) % order.length];
-  localStorage.setItem(THEME_KEY, next);
-  applyTheme(next);
-  showToast(next==='system' ? 'Thema: systeem' : next==='light' ? '&#9728; Licht thema' : '&#127769; Donker thema');
+  localStorage.setItem(THEME_KEY, effectiefThema()==='dark' ? 'light' : 'dark');
+  applyTheme();
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2219,7 +2218,7 @@ function updateRestBanner(){
 /* ══════════════════════════════════════════════════════════════
    START
 ══════════════════════════════════════════════════════════════ */
-applyTheme(getTheme());
+applyTheme();
 setTab('dashboard');
 syncCloudForActiveUser(); // pakt direct op zodra 'cloudsync-ready' is gevuurd als er al een code is opgeslagen
 
