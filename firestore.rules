@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Alleen de gewichts-sync van TogetherFit: toegang vereist het exacte
+    // pad (dus de huishoudcode) - er is geen manier om alle huishoudens op
+    // te vragen zonder de code al te kennen. Er is geen login-systeem, dus
+    // dit is beveiliging-door-onvindbaarheid, passend bij een gratis
+    // familie-app zonder gevoelige data (alleen naam/geslacht/gewicht).
+    match /households/{code}/members/{memberId} {
+      allow read, write: if true;
+    }
+    // Alles daarbuiten is standaard dicht.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

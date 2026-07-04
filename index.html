@@ -950,7 +950,78 @@ function switchUser(id){
   calSelectedDag = null;
   stopRest();
   save();
+  syncCloudForActiveUser();
   render();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HUISHOUDEN KOPPELEN (cloud-sync van gewicht via Firestore) —
+   ieder profiel kan een huishoudcode instellen; alle profielen met
+   dezelfde code zien elkaars gewichtslijn, ook op losse telefoons.
+══════════════════════════════════════════════════════════════ */
+let cloudLeden = [];        // laatst ontvangen huishoudleden uit de cloud
+let cloudHuishoudCode = null; // welke code we nu beluisteren (voorkomt dubbel abonneren)
+
+function genereerHuishoudCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // zonder 0/O en 1/I, minder verwarrend
+  let code = '';
+  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+function syncCloudForActiveUser(){
+  const u = activeUser();
+  const code = u && u.profile && u.profile.huishoudCode;
+  if(!code){
+    cloudLeden = []; cloudHuishoudCode = null;
+    if(window.cloudSync) window.cloudSync.stopWatching();
+    return;
+  }
+  if(code === cloudHuishoudCode) return; // al aan het luisteren naar deze code
+  cloudHuishoudCode = code;
+  if(!window.cloudSync) return; // wordt alsnog opgepakt via 'cloudsync-ready'
+  window.cloudSync.watchHousehold(code, leden=>{
+    cloudLeden = leden;
+    if(activeTab==='voortgang') render();
+  });
+}
+window.addEventListener('cloudsync-ready', syncCloudForActiveUser);
+
+function pushWeightsToCloud(u){
+  u = u || activeUser();
+  const code = u && u.profile && u.profile.huishoudCode;
+  if(!code || !window.cloudSync) return;
+  window.cloudSync.saveMember(code, state.activeUserId, u.naam, u.profile.geslacht, u.weights);
+}
+function alleGewichtSeries(){
+  const lokaal = Object.entries(state.users).map(([id,u])=>({id, naam:u.naam, weights:u.weights}));
+  const lokaleIds = new Set(Object.keys(state.users));
+  const cloud = cloudLeden.filter(l=>!lokaleIds.has(l.id)).map(l=>({id:l.id, naam:l.naam, weights:l.weights||[]}));
+  return [...lokaal, ...cloud];
+}
+
+function koppelHuishouden(code){
+  const u = activeUser();
+  const schoon = (code||'').trim().toUpperCase();
+  if(!schoon){ alert('Vul een huishoudcode in.'); return; }
+  u.profile.huishoudCode = schoon;
+  save();
+  cloudHuishoudCode = null; // forceer opnieuw abonneren op de nieuwe code
+  syncCloudForActiveUser();
+  pushWeightsToCloud(u);
+  render();
+  showToast(`&#10003; Gekoppeld aan huishouden ${schoon}`);
+}
+function nieuwHuishouden(){
+  koppelHuishouden(genereerHuishoudCode());
+}
+function ontkoppelHuishouden(){
+  const u = activeUser();
+  delete u.profile.huishoudCode;
+  save();
+  cloudLeden = []; cloudHuishoudCode = null;
+  if(window.cloudSync) window.cloudSync.stopWatching();
+  render();
+  showToast('Huishouden ontkoppeld');
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1108,6 +1179,7 @@ function saveProfile(){
     u.workout.volgende = PROGRAMS[nieuwProgramma].schema[0];
   }
   save();
+  pushWeightsToCloud(u); // naam/geslacht kunnen gewijzigd zijn — houd de cloud-legenda in sync
   closeModal();
   render();
 }
@@ -1468,11 +1540,44 @@ function renderVoortgang(){
     </div>`;
 
   const content = voortgangView==='grafiek' ? renderWeightChart() : renderWeightTable();
-  const titel = Object.keys(state.users).length>1 ? 'Gewichtsverloop — iedereen' : 'Gewichtsverloop';
+  const titel = alleGewichtSeries().length>1 ? 'Gewichtsverloop — iedereen' : 'Gewichtsverloop';
 
-  return `${statBlock}${addForm}<h2 class="section-title">${titel}</h2>${toggle}${content}
+  return `${statBlock}${addForm}
+    <h2 class="section-title">Huishouden koppelen</h2>
+    ${renderHuishoudKaart(u)}
+    <h2 class="section-title">${titel}</h2>${toggle}${content}
     <h2 class="section-title">Kalender — voeding &amp; trainingen</h2>
     ${renderKalender()}`;
+}
+function renderHuishoudKaart(u){
+  const code = u.profile.huishoudCode;
+  if(code){
+    const aantal = alleGewichtSeries().length;
+    return `
+      <div class="card">
+        <div class="row">
+          <div>
+            <div style="font-size:12px;color:var(--text2);">Gekoppeld aan huishouden</div>
+            <div style="font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:1px;">${code}</div>
+          </div>
+          <span class="badge good">&#10003; ${aantal} ${aantal===1?'profiel':'profielen'}</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--text2);margin:10px 0 0 0;">Geef deze code aan je gezinslid — die vult 'm bij "Koppelen met een code" in om jullie grafieken samen te zien, ook op een andere telefoon.</p>
+        <button class="btn danger block" style="margin-top:12px;" onclick="ontkoppelHuishouden()">Ontkoppelen</button>
+      </div>`;
+  }
+  return `
+    <div class="card">
+      <p style="font-size:13px;color:var(--text2);margin:0 0 12px 0;">Koppel je profiel aan dat van een gezinslid om jullie gewicht in dezelfde grafiek te zien — werkt ook als jullie ieder een eigen telefoon gebruiken.</p>
+      <button class="btn secondary block" onclick="nieuwHuishouden()">Nieuw huishouden aanmaken</button>
+      <div style="margin-top:12px;">
+        <label>Koppelen met een code</label>
+        <div class="row" style="gap:8px;align-items:stretch;">
+          <input id="hh_code" placeholder="Bijv. AB12CD" style="text-transform:uppercase;">
+          <button class="btn" style="flex-shrink:0;" onclick="koppelHuishouden(document.getElementById('hh_code').value)">Koppelen</button>
+        </div>
+      </div>
+    </div>`;
 }
 function setVoortgangView(v){ voortgangView=v; render(); }
 
@@ -1486,13 +1591,14 @@ function addWeight(){
   else u.weights.push({datum, gewicht});
   u.weights.sort((a,b)=>a.datum.localeCompare(b.datum));
   save();
+  pushWeightsToCloud(u);
   render();
   showToast(`&#10003; Gewicht opgeslagen: ${gewicht} kg`);
 }
 
 function renderWeightChart(){
   const activeU = activeUser();
-  const userList = Object.values(state.users).filter(u=>u.weights.length>0);
+  const userList = alleGewichtSeries().filter(u=>u.weights.length>0);
   const genoegData = userList.some(u=>u.weights.length>1);
   if(!userList.length || !genoegData){
     return `<div class="card"><div class="empty">Voeg minstens 2 metingen toe om een grafiek te zien.</div></div>`;
@@ -2063,11 +2169,62 @@ function updateRestBanner(){
    START
 ══════════════════════════════════════════════════════════════ */
 setTab('dashboard');
+syncCloudForActiveUser(); // pakt direct op zodra 'cloudsync-ready' is gevuurd als er al een code is opgeslagen
 
 // Service worker voor offline gebruik (werkt alleen via HTTPS of localhost)
 if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
+</script>
+
+<script type="module">
+/* ══════════════════════════════════════════════════════════════
+   CLOUD-SYNC (Firebase Firestore) — deelt alleen het gewicht tussen
+   telefoons van hetzelfde huishouden, via een huishoudcode. Voeding
+   en workouts blijven lokaal/privé per telefoon.
+══════════════════════════════════════════════════════════════ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, onSnapshot, collection
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDqu6VaFbp2wzZOghCqXuuZZA_FUjqWKLk",
+  authDomain: "togetherfit-26b4d.firebaseapp.com",
+  projectId: "togetherfit-26b4d",
+  storageBucket: "togetherfit-26b4d.firebasestorage.app",
+  messagingSenderId: "94391415864",
+  appId: "1:94391415864:web:14dff4e1cd5912cdd4e2cd"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let unsubscribe = null;
+
+window.cloudSync = {
+  // Slaat het gewicht (en naam/geslacht voor de legenda) van één profiel op onder een huishoudcode
+  async saveMember(code, memberId, naam, geslacht, weights){
+    try{
+      await setDoc(doc(db, 'households', code, 'members', memberId), {
+        naam, geslacht, weights, updatedAt: Date.now()
+      });
+      return true;
+    }catch(e){ console.error('cloudSync.saveMember faalde:', e); return false; }
+  },
+  // Luistert live naar alle leden van een huishouden; callback krijgt een array van {id, naam, geslacht, weights}
+  watchHousehold(code, callback){
+    if(unsubscribe) unsubscribe();
+    unsubscribe = onSnapshot(collection(db, 'households', code, 'members'), snap=>{
+      const leden = [];
+      snap.forEach(d=>leden.push({ id:d.id, ...d.data() }));
+      callback(leden);
+    }, err=>console.error('cloudSync.watchHousehold faalde:', err));
+  },
+  stopWatching(){
+    if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+  }
+};
+window.dispatchEvent(new Event('cloudsync-ready'));
 </script>
 </body>
 </html>
