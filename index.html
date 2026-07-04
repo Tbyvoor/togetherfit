@@ -69,6 +69,23 @@
       --shadow: 0 1px 2px rgba(0,0,0,.25), 0 10px 28px -20px rgba(0,0,0,.6);
     }
   }
+  /* Handmatige overrides — winnen altijd van de systeeminstelling hierboven */
+  :root[data-theme="dark"]{
+    --bg: #121812; --surface: #1b231b; --surface-2: #232d23; --border: #2c372c;
+    --text1: #eef3ec; --text2: #b6c2b6; --text3: #839083;
+    --brand: #35835a; --brand-deep: #234e37; --brand-dark: #9fd8b6; --brand-light: #21301f;
+    --on-brand: #f4faf4; --good: #57c274; --good-bg: #1e3322;
+    --warning: #dfa93c; --warning-bg: #362c14; --critical: #e57272; --critical-bg: #3a2020;
+    --seq-line: #5598e7; --shadow: 0 1px 2px rgba(0,0,0,.25), 0 10px 28px -20px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"]{
+    --bg: #f3f5ef; --surface: #ffffff; --surface-2: #edf1e9; --border: #e2e7dd;
+    --text1: #1b2a20; --text2: #49584d; --text3: #7d8a7e;
+    --brand: #2c6e49; --brand-deep: #1f5436; --brand-dark: #1f5436; --brand-light: #e3efe4;
+    --on-brand: #f4faf4; --good: #2e8f47; --good-bg: #e2f3e4;
+    --warning: #a1700c; --warning-bg: #f9efd8; --critical: #c23b3b; --critical-bg: #f9e6e4;
+    --seq-line: #2a78d6; --shadow: 0 1px 2px rgba(27,42,32,.05), 0 10px 28px -20px rgba(27,42,32,.35);
+  }
   *{ box-sizing:border-box; }
   html{ -webkit-text-size-adjust:100%; }
   body{
@@ -463,13 +480,18 @@
       <h1 id="greeting">TogetherFit</h1>
       <div class="sub" id="headerSub">&nbsp;</div>
     </div>
-    <button class="gear-btn" onclick="openProfileModal()" aria-label="Profiel en instellingen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
-        <line x1="6" y1="4" x2="6" y2="9"/><circle cx="6" cy="12" r="2.3"/><line x1="6" y1="15" x2="6" y2="20"/>
-        <line x1="12" y1="4" x2="12" y2="6"/><circle cx="12" cy="9" r="2.3"/><line x1="12" y1="12" x2="12" y2="20"/>
-        <line x1="18" y1="4" x2="18" y2="12"/><circle cx="18" cy="15" r="2.3"/><line x1="18" y1="18" x2="18" y2="20"/>
-      </svg>
-    </button>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+      <button class="gear-btn" id="themeBtn" onclick="cycleTheme()" aria-label="Licht/donker thema wisselen">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></svg>
+      </button>
+      <button class="gear-btn" onclick="openProfileModal()" aria-label="Profiel en instellingen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+          <line x1="6" y1="4" x2="6" y2="9"/><circle cx="6" cy="12" r="2.3"/><line x1="6" y1="15" x2="6" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="6"/><circle cx="12" cy="9" r="2.3"/><line x1="12" y1="12" x2="12" y2="20"/>
+          <line x1="18" y1="4" x2="18" y2="12"/><circle cx="18" cy="15" r="2.3"/><line x1="18" y1="18" x2="18" y2="20"/>
+        </svg>
+      </button>
+    </div>
   </header>
   <div id="profileBar" class="profile-bar"></div>
   <main id="view"></main>
@@ -517,6 +539,35 @@
 </div>
 
 <script>
+/* ══════════════════════════════════════════════════════════════
+   THEMA — licht/donker/systeem, per apparaat (niet per profiel)
+══════════════════════════════════════════════════════════════ */
+const THEME_KEY = 'fitpad_theme'; // 'system' | 'light' | 'dark'
+const THEME_ICONS = {
+  system: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/>',
+  light: '<circle cx="12" cy="12" r="4"/><path d="M12 3v1.5"/><path d="M12 19.5v1.5"/><path d="M3 12h1.5"/><path d="M19.5 12h1.5"/><path d="M5.6 5.6l1 1"/><path d="M17.4 17.4l1 1"/><path d="M5.6 18.4l1 -1"/><path d="M17.4 6.6l1 -1"/>',
+  dark: '<path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1 -9 -9z"/>'
+};
+function getTheme(){ return localStorage.getItem(THEME_KEY) || 'system'; }
+function applyTheme(mode){
+  const root = document.documentElement;
+  if(mode==='dark' || mode==='light') root.setAttribute('data-theme', mode);
+  else root.removeAttribute('data-theme');
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  const stelselDonker = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const effectiefDonker = mode==='dark' || (mode==='system' && stelselDonker);
+  if(metaTheme) metaTheme.setAttribute('content', effectiefDonker ? '#234e37' : '#1f5436');
+  const icon = document.getElementById('themeIcon');
+  if(icon) icon.innerHTML = THEME_ICONS[mode] || THEME_ICONS.system;
+}
+function cycleTheme(){
+  const order = ['system','light','dark'];
+  const next = order[(order.indexOf(getTheme())+1) % order.length];
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+  showToast(next==='system' ? 'Thema: systeem' : next==='light' ? '&#9728; Licht thema' : '&#127769; Donker thema');
+}
+
 /* ══════════════════════════════════════════════════════════════
    DATA & OPSLAG (localStorage)
 ══════════════════════════════════════════════════════════════ */
@@ -2168,6 +2219,7 @@ function updateRestBanner(){
 /* ══════════════════════════════════════════════════════════════
    START
 ══════════════════════════════════════════════════════════════ */
+applyTheme(getTheme());
 setTab('dashboard');
 syncCloudForActiveUser(); // pakt direct op zodra 'cloudsync-ready' is gevuurd als er al een code is opgeslagen
 
